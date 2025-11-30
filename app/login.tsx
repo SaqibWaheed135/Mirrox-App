@@ -34,37 +34,39 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password.');
-      return;
-    }
+    // if (!email || !password) {
+    //   Alert.alert('Error', 'Please enter email and password.');
+    //   return;
+    // }
 
-    try {
-      setLoading(true);
-      await authService.login({
-        email: email.trim(),
-        password,
-      });
-      router.replace('/(tabs)/home');
-    } catch (err: any) {
-      console.error('Login error:', err);
+    router.replace('/(tabs)');
+
+    // try {
+    //   setLoading(true);
+    //   await authService.login({
+    //     email: email.trim(),
+    //     password,
+    //   });
+    //   router.replace('/(tabs)/home');
+    // } catch (err: any) {
+    //   console.error('Login error:', err);
       
-      let errorMessage = 'Invalid credentials. Please try again.';
+    //   let errorMessage = 'Invalid credentials. Please try again.';
       
-      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. Please check your internet connection and try again.';
-      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        errorMessage = 'Network error. Please check your internet connection.';
-      } else if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
+    //   if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+    //     errorMessage = 'Request timed out. Please check your internet connection and try again.';
+    //   } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+    //     errorMessage = 'Network error. Please check your internet connection.';
+    //   } else if (err.response?.data?.message) {
+    //     errorMessage = err.response.data.message;
+    //   } else if (err.message) {
+    //     errorMessage = err.message;
+    //   }
       
-      Alert.alert('Login Failed', errorMessage);
-    } finally {
-      setLoading(false);
-    }
+    //   Alert.alert('Login Failed', errorMessage);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   const handleSignup = async () => {

@@ -169,7 +169,7 @@ export default function ProfileScreen() {
           {isAdmin && (
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => console.log('Admin Panel')}
+              onPress={() => router.push('/admin')}
             >
               <Text style={styles.adminIcon}>⚙️</Text>
               <Text style={[styles.menuTitle, styles.adminTitle]}>Admin Panel</Text>

@@ -12,6 +12,11 @@ export const API_CONFIG = {
       LOGOUT: '/api/auth/logout',
       REFRESH: '/api/auth/refresh',
     },
+    ADMIN: {
+      STATS: '/api/admin/stats',
+      USERS: '/api/admin/users',
+      HAIRCUTS: '/api/admin/haircuts',
+    },
   },
   TIMEOUT: 10000, // 10 seconds
 };

@@ -49,11 +49,11 @@ export default function TabLayout() {
         }}
       />
       {/* Camera screen hidden for now */}
-      {/* <Tabs.Screen
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Camera',
-          headerTitle: 'Mirrorx',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => (
             <IconSymbol 
               size={focused ? 28 : 24} 
@@ -62,7 +62,7 @@ export default function TabLayout() {
             />
           ),
         }}
-      /> */}
+      />
       <Tabs.Screen
         name="profile"
         options={{
