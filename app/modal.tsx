@@ -1,5 +1,5 @@
-import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Link, router } from 'expo-router';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,9 +7,26 @@ import { ThemedView } from '@/components/themed-view';
 export default function ModalScreen() {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
+      <ThemedText type="title">Settings</ThemedText>
+      <ThemedText style={styles.description}>
+        Configure your Mirrorx app settings here.
+      </ThemedText>
+      
+      <TouchableOpacity 
+        style={styles.button}
+        onPress={() => router.back()}
+      >
+        <ThemedText type="defaultSemiBold" style={styles.buttonText}>
+          Close
+        </ThemedText>
+      </TouchableOpacity>
+      
+      <Link href="/(tabs)" asChild>
+        <TouchableOpacity style={styles.button}>
+          <ThemedText type="defaultSemiBold" style={styles.buttonText}>
+            Go to Camera
+          </ThemedText>
+        </TouchableOpacity>
       </Link>
     </ThemedView>
   );
@@ -22,8 +39,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  link: {
+  description: {
+    marginTop: 10,
+    marginBottom: 30,
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  button: {
     marginTop: 15,
-    paddingVertical: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    backgroundColor: '#0a7ea4',
+    minWidth: 150,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
   },
 });

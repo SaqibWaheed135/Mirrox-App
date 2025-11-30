@@ -27,6 +27,28 @@ export const Colors = {
   },
 };
 
+// Poppins Font Family
+export const Poppins = {
+  Thin: 'Poppins-Thin',
+  ThinItalic: 'Poppins-ThinItalic',
+  ExtraLight: 'Poppins-ExtraLight',
+  ExtraLightItalic: 'Poppins-ExtraLightItalic',
+  Light: 'Poppins-Light',
+  LightItalic: 'Poppins-LightItalic',
+  Regular: 'Poppins-Regular',
+  Italic: 'Poppins-Italic',
+  Medium: 'Poppins-Medium',
+  MediumItalic: 'Poppins-MediumItalic',
+  SemiBold: 'Poppins-SemiBold',
+  SemiBoldItalic: 'Poppins-SemiBoldItalic',
+  Bold: 'Poppins-Bold',
+  BoldItalic: 'Poppins-BoldItalic',
+  ExtraBold: 'Poppins-ExtraBold',
+  ExtraBoldItalic: 'Poppins-ExtraBoldItalic',
+  Black: 'Poppins-Black',
+  BlackItalic: 'Poppins-BlackItalic',
+};
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
