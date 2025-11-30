@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BottomNav } from '@/components/navigation/bottom-nav';
 import { Poppins } from '@/constants/theme';
 
 interface HaircutItem {
@@ -291,34 +292,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <View style={styles.navIconActive}>
-            <Image
-              source={require('@/assets/icons/home.png')}
-              style={styles.navIconImage}
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require('@/assets/icons/ai.png')}
-            style={styles.navIconImageInactive}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push('/(tabs)/profile')}
-        >
-          <Image
-            source={require('@/assets/icons/profile.png')}
-            style={styles.navIconImageInactive}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-      </View>
+      <BottomNav activeScreen="home" />
     </LinearGradient>
   );
 }
@@ -433,51 +407,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 10,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderRadius: 35,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 15,
-    elevation: 10,
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  navIconActive: {
-    backgroundColor: '#000059',
-    paddingHorizontal: 30,
-    paddingVertical: 10,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000059',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  navIconImage: {
-    width: 24,
-    height: 24,
-    tintColor: '#fff',
-  },
-  navIconImageInactive: {
-    width: 26,
-    height: 26,
-    tintColor: '#000',
-    opacity: 0.3,
   },
   haircutsGrid: {
     flexDirection: 'row',

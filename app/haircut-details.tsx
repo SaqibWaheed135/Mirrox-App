@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import { BottomNav } from '@/components/navigation/bottom-nav';
 import { Poppins } from '@/constants/theme';
 
 export default function HaircutDetailsScreen() {
@@ -95,40 +96,7 @@ export default function HaircutDetailsScreen() {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push('/(tabs)/home')}
-        >
-          <View style={styles.navIconActive}>
-            <Image
-              source={require('@/assets/icons/home.png')}
-              style={styles.navIconImage}
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => router.push('/(tabs)/index')}
-        >
-          <Image
-            source={require('@/assets/icons/ai.png')}
-            style={styles.navIconImageInactive}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push('/(tabs)/profile')}
-        >
-          <Image
-            source={require('@/assets/icons/profile.png')}
-            style={styles.navIconImageInactive}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-      </View>
+      <BottomNav />
     </LinearGradient>
   );
 }
@@ -233,51 +201,6 @@ const styles = StyleSheet.create({
     color: '#1C1C84',
     fontSize: 12,
     fontFamily: Poppins.Medium,
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 10,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderRadius: 35,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 15,
-    elevation: 10,
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  navIconActive: {
-    backgroundColor: '#000059',
-    paddingHorizontal: 30,
-    paddingVertical: 10,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000059',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  navIconImage: {
-    width: 24,
-    height: 24,
-    tintColor: '#fff',
-  },
-  navIconImageInactive: {
-    width: 26,
-    height: 26,
-    tintColor: '#000',
-    opacity: 0.3,
   },
 });
 

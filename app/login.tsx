@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -17,10 +16,7 @@ import {
 } from 'react-native';
 
 import { Poppins } from '@/constants/theme';
-import { AuthService } from '@/utils/auth';
-
-const API_URL = 'http://192.168.1.16:8000/api/auth'; // Change in production
-const USE_MOCK_API = false; // Set to true for testing without backend
+import { authService } from '@/services/auth.service';
 
 export default function LoginScreen() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
@@ -38,67 +34,37 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    // if (!email || !password) {
-    //   Alert.alert('Error', 'Please enter email and password.');
-    //   return;
-    // }
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password.');
+      return;
+    }
 
-    // try {
-    //   setLoading(true);
+    try {
+      setLoading(true);
+      await authService.login({
+        email: email.trim(),
+        password,
+      });
+      router.replace('/(tabs)/home');
+    } catch (err: any) {
+      console.error('Login error:', err);
       
-    //   let res;
+      let errorMessage = 'Invalid credentials. Please try again.';
       
-    //   if (USE_MOCK_API) {
-    //     // Mock API response for testing
-    //     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-    //     res = {
-    //       data: {
-    //         token: 'mock_token_' + Date.now(),
-    //         user: {
-    //           id: '1',
-    //           email: email.trim(),
-    //           name: 'Test User',
-    //         },
-    //       },
-    //     };
-    //   } else {
-    //     // Real API call with timeout
-    //     res = await axios.post(
-    //       `${API_URL}/login`,
-    //       { email: email.trim(), password },
-    //       {
-    //         timeout: 10000, // 10 second timeout
-    //       }
-    //     );
-    //   }
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        errorMessage = 'Request timed out. Please check your internet connection and try again.';
+      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
       
-    //   if (res.data && res.data.token && res.data.user) {
-    //     await AuthService.setAuth(res.data.token, res.data.user);
-    //     router.replace('/(tabs)/home'); // Use replace to prevent going back
-    //   } else {
-    //     throw new Error('Invalid response from server');
-    //   }
-    // } catch (err: any) {
-    //   console.error('Login error:', err);
-      
-    //   let errorMessage = 'Invalid credentials. Please try again.';
-      
-    //   if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-    //     errorMessage = 'Request timed out. Please check your internet connection and try again.';
-    //   } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-    //     errorMessage = 'Network error. Please check your internet connection.';
-    //   } else if (err.response?.data?.message) {
-    //     errorMessage = err.response.data.message;
-    //   } else if (err.message) {
-    //     errorMessage = err.message;
-    //   }
-      
-    //   Alert.alert('Login Failed', errorMessage);
-    // } finally {
-    //   setLoading(false);
-    // }
-
-    router.replace('/(tabs)/home'); 
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignup = async () => {
@@ -114,46 +80,13 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      
-      let res;
-      
-      if (USE_MOCK_API) {
-        // Mock API response for testing
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-        res = {
-          data: {
-            token: 'mock_token_' + Date.now(),
-            user: {
-              id: '1',
-              email: signupEmail.trim(),
-              firstName: firstName.trim(),
-              lastName: lastName.trim(),
-              name: `${firstName.trim()} ${lastName.trim()}`,
-            },
-          },
-        };
-      } else {
-        // Real API call with timeout
-        res = await axios.post(
-          `${API_URL}/signup`,
-          {
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: signupEmail.trim(),
-            password: signupPassword,
-          },
-          {
-            timeout: 10000, // 10 second timeout
-          }
-        );
-      }
-      
-      if (res.data && res.data.token && res.data.user) {
-        await AuthService.setAuth(res.data.token, res.data.user);
-        router.replace('/(tabs)/home');
-      } else {
-        throw new Error('Invalid response from server');
-      }
+      await authService.signup({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: signupEmail.trim(),
+        password: signupPassword,
+      });
+      router.replace('/(tabs)/home');
     } catch (err: any) {
       console.error('Signup error:', err);
       
