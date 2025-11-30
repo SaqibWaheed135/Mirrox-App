@@ -4,8 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
-  Image,
-  StyleSheet,
+  StyleSheet
 } from 'react-native';
 
 import { AuthService } from '@/lib/auth';

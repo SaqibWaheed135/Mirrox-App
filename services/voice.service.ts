@@ -1,14 +1,6 @@
-/**
- * Voice Recognition Service
- * Handles voice-to-text functionality
- * 
- * Note: This is a placeholder implementation. In production, you would integrate
- * with a real voice recognition API like:
- * - Google Speech-to-Text API
- * - AWS Transcribe
- * - Azure Speech Services
- * - Or use a library like @react-native-voice/voice (requires native modules)
- */
+import { Audio } from "expo-av";
+import * as FileSystem from 'expo-file-system/legacy'; // ← Add /legacy
+import { speechService } from "./speech.service";
 
 export interface VoiceRecognitionResult {
   text: string;
@@ -16,93 +8,200 @@ export interface VoiceRecognitionResult {
 }
 
 class VoiceService {
-  private isListening: boolean = false;
-  private recognitionTimeout: NodeJS.Timeout | null = null;
+  private recording: Audio.Recording | null = null;
+  private isListening = false;
+
+  // Supported formats we can detect
+  private audioEncoding: "WEBM_OPUS" | "OGG_OPUS" | "MP4_AAC" = "WEBM_OPUS";
 
   /**
-   * Start listening for voice input
-   * @param onResult Callback when speech is recognized
-   * @param onError Callback for errors
+   * Configure audio mode
    */
-  async startListening(
-    onResult?: (result: VoiceRecognitionResult) => void,
-    onError?: (error: Error) => void
-  ): Promise<void> {
-    if (this.isListening) {
-      return;
-    }
+  private async setupAudioMode() {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      staysActiveInBackground: false,
+    });
+  }
 
+  /**
+   * Ask mic permissions
+   */
+  async requestPermissions(): Promise<boolean> {
+    const { status } = await Audio.requestPermissionsAsync();
+    return status === "granted";
+  }
+
+  /**
+   * Detect encoding based on file extension
+   */
+  private detectEncoding(uri: string) {
+    if (uri.endsWith(".m4a")) {
+      this.audioEncoding = "MP4_AAC";
+    } else if (uri.endsWith(".webm")) {
+      this.audioEncoding = "WEBM_OPUS";
+    } else if (uri.endsWith(".ogg")) {
+      this.audioEncoding = "OGG_OPUS";
+    } else {
+      this.audioEncoding = "WEBM_OPUS"; // safe fallback
+    }
+  }
+
+  /**
+   * Start recording
+   */
+  async startListening(): Promise<void> {
+    if (this.isListening) return;
+
+    const hasPermission = await this.requestPermissions();
+    if (!hasPermission) throw new Error("Microphone permission denied");
+
+    await this.setupAudioMode();
+
+    const { recording } = await Audio.Recording.createAsync(
+      Audio.RecordingOptionsPresets.HIGH_QUALITY
+    );
+
+    this.recording = recording;
     this.isListening = true;
 
-    // Simulate voice recognition
-    // In a real implementation, you would:
-    // 1. Request microphone permissions
-    // 2. Start recording audio
-    // 3. Send audio to a speech recognition API
-    // 4. Process the response
-
-    try {
-      // Mock implementation - replace with actual voice recognition
-      console.log('Voice recognition started');
-      
-      // Simulate processing time
-      this.recognitionTimeout = setTimeout(() => {
-        if (onResult) {
-          // Mock result - replace with actual API response
-          onResult({
-            text: 'Voice command recognized',
-            confidence: 0.85,
-          });
-        }
-      }, 2000);
-    } catch (error) {
-      this.isListening = false;
-      if (onError) {
-        onError(error as Error);
-      }
-    }
+    console.log("🎤 Voice recording started");
   }
 
   /**
-   * Stop listening for voice input
+   * Stop recording and process audio
    */
-  async stopListening(): Promise<void> {
-    if (!this.isListening) {
-      return;
-    }
+  async stopListening(): Promise<VoiceRecognitionResult | null> {
+    if (!this.isListening || !this.recording) return null;
+
+    await this.recording.stopAndUnloadAsync();
+    const uri = this.recording.getURI();
 
     this.isListening = false;
+    this.recording = null;
 
-    if (this.recognitionTimeout) {
-      clearTimeout(this.recognitionTimeout);
-      this.recognitionTimeout = null;
-    }
+    if (!uri) throw new Error("No audio file recorded");
 
-    console.log('Voice recognition stopped');
+    console.log("🎤 Recording stopped:", uri);
+
+    this.detectEncoding(uri);
+
+    const result = await this.processAudioFile(uri);
+
+    // cleanup temp file
+    try {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+    } catch {}
+
+    return result;
   }
 
   /**
-   * Check if currently listening
+   * Converts audio → base64 → sends to backend STT
    */
-  getListeningState(): boolean {
+  private async processAudioFile(uri: string): Promise<VoiceRecognitionResult> {
+    const base64Audio = await FileSystem.readAsStringAsync(uri, {
+  encoding: 'base64',  // ← Use string literal instead of FileSystem.EncodingType.Base64
+});
+
+    try {
+      // Send encoding to backend
+      const result = await speechService.speechToText(
+        base64Audio,
+        "en-US",
+        this.audioEncoding
+      );
+
+      return {
+        text: result.transcript,
+        confidence: result.confidence,
+      };
+    } catch (error) {
+      console.warn("❗ Backend failed. Switching to Google STT fallback…");
+      return await this.googleFallback(uri);
+    }
+  }
+
+  /**
+   * Google Speech-to-Text fallback
+   */
+  private async googleFallback(uri: string): Promise<VoiceRecognitionResult> {
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_SPEECH_API_KEY;
+
+    if (!apiKey) {
+      return {
+        text: "Audio recorded but no STT configured.",
+        confidence: 0.5,
+      };
+    }
+
+   const base64Audio = await FileSystem.readAsStringAsync(uri, {
+    encoding: 'base64',  // ← Fixed
+  });
+
+    // Google supported encoding map
+    const encodingMap: any = {
+      WEBM_OPUS: "WEBM_OPUS",
+      OGG_OPUS: "OGG_OPUS",
+      MP4_AAC: "ENCODING_UNSUPPORTED",
+    };
+
+    const encoding = encodingMap[this.audioEncoding];
+
+    if (encoding === "ENCODING_UNSUPPORTED") {
+      return { text: "Unsupported audio format for Google STT.", confidence: 0 };
+    }
+
+    const response = await fetch(
+      `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          config: {
+            encoding,
+            languageCode: "en-US",
+            enableAutomaticPunctuation: true,
+          },
+          audio: { content: base64Audio },
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!data.results) return { text: "", confidence: 0 };
+
+    return {
+      text: data.results[0].alternatives[0].transcript,
+      confidence: data.results[0].alternatives[0].confidence || 0.9,
+    };
+  }
+
+  /**
+   * Get listening state
+   */
+  getListeningState() {
     return this.isListening;
   }
 
   /**
-   * Process audio file (for file-based recognition)
+   * Cancel ongoing recording
    */
-  async processAudioFile(audioUri: string): Promise<VoiceRecognitionResult> {
-    // In a real implementation, you would:
-    // 1. Read the audio file
-    // 2. Send it to a speech recognition API
-    // 3. Return the transcribed text
+  async cancelRecording() {
+    if (!this.recording) return;
 
-    return {
-      text: 'Audio file processed',
-      confidence: 0.9,
-    };
+    try {
+      await this.recording.stopAndUnloadAsync();
+      const uri = this.recording.getURI();
+      if (uri) await FileSystem.deleteAsync(uri, { idempotent: true });
+    } catch {}
+
+    this.recording = null;
+    this.isListening = false;
   }
 }
 
 export const voiceService = new VoiceService();
-

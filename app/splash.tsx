@@ -4,8 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   Dimensions,
-  Image,
-  StyleSheet,
+  StyleSheet
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -88,7 +87,7 @@ export default function SplashScreen() {
     >
       {/* APP ICON FIRST */}
       <Animated.Image
-        source={require('@/assets/images/icon.png')}
+        source={require('@/assets/images/app-icon.png')}
         style={[
           styles.icon,
           {
@@ -104,7 +103,7 @@ export default function SplashScreen() {
 
       {/* MAIN LOGO AFTER TRANSITION */}
       <Animated.Image
-        source={require('@/assets/images/splash-icon.png')}
+        source={require('@/assets/images/main-logo.png')}
         style={[
           styles.mainLogo,
           {
