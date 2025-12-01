@@ -223,7 +223,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
-        headerShown: true,
+        headerShown: false,
         headerStyle: {
           backgroundColor: Colors[colorScheme ?? 'light'].background,
         },
@@ -309,7 +309,7 @@ export default function TabLayout() {
       )}
 
       {/* Hidden screens - need to exist but won't show in tab bar */}
-      {isAdmin && (
+      {/* {isAdmin && (
         <>
           <Tabs.Screen
             name="home"
@@ -330,7 +330,7 @@ export default function TabLayout() {
             }}
           />
         </>
-      )}
+      )} */}
       
       {!isAdmin && (
         <Tabs.Screen

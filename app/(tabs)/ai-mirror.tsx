@@ -2317,7 +2317,7 @@ const styles = StyleSheet.create({
   // Top Badge
   topBadgeContainer: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 30,
+    top: Platform.OS === 'ios' ? 50 : 50,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -2391,7 +2391,7 @@ const styles = StyleSheet.create({
   // Home Button
   homeButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 30,
+    top: Platform.OS === 'ios' ? 50 : 50,
     left: 20,
     zIndex: 2000,
   },
@@ -2414,7 +2414,7 @@ const styles = StyleSheet.create({
   // Bottom Controls
   bottomControls: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 50 : 30,
+    bottom: Platform.OS === 'ios' ? 50 : 60,
     left: 0,
     right: 0,
     alignItems: 'center',

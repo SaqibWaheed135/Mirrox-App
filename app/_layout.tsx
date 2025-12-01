@@ -19,7 +19,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  
+
   const [fontsLoaded, fontError] = useFonts({
     'Poppins-Thin': require('@/assets/fonts/Poppins-Thin.ttf'),
     'Poppins-ThinItalic': require('@/assets/fonts/Poppins-ThinItalic.ttf'),
@@ -81,111 +81,137 @@ export default function RootLayout() {
             backgroundColor: Colors[colorScheme ?? 'light'].background,
           },
         }}>
-        <Stack.Screen 
-          name="index" 
-          options={{ 
+        <Stack.Screen
+          name="index"
+          options={{
             headerShown: false,
             animation: 'none',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="onboarding" 
-          options={{ 
+        <Stack.Screen
+          name="onboarding"
+          options={{
             headerShown: false,
             animation: 'fade',
             gestureEnabled: false,
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="login" 
+        <Stack.Screen
+          name="login"
+          options={{
+            headerShown: false,
+            animation: 'fade',
+          }}
+        />
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+            animation: 'fade',
+          }}
+        />
+
+        {/* <Stack.Screen 
+          name="ai-mirror" 
           options={{ 
             headerShown: false,
             animation: 'fade',
           }} 
-        />
-        <Stack.Screen 
-          name="(tabs)" 
+        /> */}
+
+        {/* <Stack.Screen 
+          name="home" 
           options={{ 
             headerShown: false,
             animation: 'fade',
           }} 
-        />
-        <Stack.Screen 
-          name="haircut-details" 
-          options={{ 
+        /> */}
+
+
+        <Stack.Screen
+          name="haircut-details"
+          options={{
             headerShown: false,
             presentation: 'card',
-          }} 
+          }}
         />
-        <Stack.Screen 
+        {/* <Stack.Screen 
           name="profile" 
           options={{ 
             headerShown: false,
             presentation: 'card',
           }} 
-        />
+        /> */}
 
-         <Stack.Screen 
-          name="edit-profile" 
-          options={{ 
+        <Stack.Screen
+          name="edit-profile"
+          options={{
             headerShown: false,
             presentation: 'card',
-          }} 
+          }}
         />
 
-         <Stack.Screen 
-          name="terms-policies" 
-          options={{ 
+        <Stack.Screen
+          name="terms-policies"
+          options={{
             headerShown: false,
             presentation: 'card',
-          }} 
+          }}
         />
 
-         <Stack.Screen 
-          name="admin-login" 
-          options={{ 
+        <Stack.Screen
+          name="about"
+          options={{
             headerShown: false,
             presentation: 'card',
-          }} 
+          }}
         />
-        <Stack.Screen 
+
+        <Stack.Screen
+          name="admin-login"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        {/* <Stack.Screen 
           name="admin" 
           options={{ 
             headerShown: false,
             presentation: 'card',
           }} 
-        />
+        /> */}
 
-        <Stack.Screen 
-          name="user-management" 
-          options={{ 
+        <Stack.Screen
+          name="user-management"
+          options={{
             headerShown: false,
             presentation: 'card',
-          }} 
+          }}
         />
 
-        <Stack.Screen 
-          name="haircut-management" 
-          options={{ 
+        <Stack.Screen
+          name="haircut-management"
+          options={{
             headerShown: false,
             presentation: 'card',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="modal" 
-          options={{ 
+        <Stack.Screen
+          name="modal"
+          options={{
             presentation: 'modal',
             title: 'Settings',
             headerBackTitle: 'Back',
-          }} 
+          }}
         />
 
-        <Stack.Screen 
-          name="settings" 
-          options={{ 
+        <Stack.Screen
+          name="settings"
+          options={{
             headerShown: false,
             presentation: 'card',
-          }} 
+          }}
         />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

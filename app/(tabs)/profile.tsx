@@ -135,7 +135,7 @@ export default function ProfileScreen() {
       Icon: Settings,
       title: 'Settings',
       onPress: () => router.push('/settings')   // ← Real navigation!
-    }, { id: 3, Icon: Tag, title: 'Promotions', onPress: () => showSnackbar('Promotions - Coming Soon!') },
+    }, { id: 3, Icon: Tag, title: 'Promotions', onPress: () => router.push('/about') },
     { id: 4, Icon: Bell, title: 'Notifications', onPress: () => router.push('/notifications') },
     { id: 5, Icon: Heart, title: 'Your Favorites', onPress: () => showSnackbar('Favorites - Coming Soon!') },
     { id: 6, Icon: FileText, title: 'Terms & Policies', onPress: () => router.push('/terms-policies') },

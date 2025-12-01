@@ -3,9 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronLeft, Plus } from 'lucide-react-native';
+import { ChevronLeft, Plus, Upload } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     Image,
     Modal,
@@ -15,14 +16,15 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const API_URL = 'https://mirrox-dev.vercel.app/api'; // Change in production
+const API_URL = 'https://mirrox-dev.vercel.app/api';
 
 const HaircutManagementScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
     const [haircuts, setHaircuts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
@@ -35,6 +37,7 @@ const HaircutManagementScreen = ({ navigation }) => {
         name: '',
         description: '',
         image: '',
+        imageBase64: '',
         category: 'other',
         tags: '',
     });
@@ -96,16 +99,26 @@ const HaircutManagementScreen = ({ navigation }) => {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
-                aspect: [4, 4],
+                aspect: [1, 1],
                 quality: 0.7,
                 base64: true,
             });
 
-            if (!result.cancelled) {
-                setForm({ ...form, image: result.uri });
+            if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+
+                // Store both URI for preview and base64 for upload
+                const base64Image = `data:image/jpeg;base64,${asset.base64}`;
+
+                setForm({
+                    ...form,
+                    image: asset.uri,
+                    imageBase64: base64Image
+                });
             }
         } catch (error) {
             console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image');
         }
     };
 
@@ -115,6 +128,7 @@ const HaircutManagementScreen = ({ navigation }) => {
             name: haircut.name || '',
             description: haircut.description || '',
             image: haircut.image || '',
+            imageBase64: haircut.image || '',
             category: haircut.category || 'other',
             tags: haircut.tags?.join(', ') || '',
         });
@@ -127,6 +141,7 @@ const HaircutManagementScreen = ({ navigation }) => {
             name: '',
             description: '',
             image: '',
+            imageBase64: '',
             category: 'other',
             tags: '',
         });
@@ -135,18 +150,36 @@ const HaircutManagementScreen = ({ navigation }) => {
 
     const handleSave = async () => {
         try {
+            // Validation
+            if (!form.name.trim()) {
+                Alert.alert('Validation Error', 'Please enter haircut name');
+                return;
+            }
+
+            if (!form.imageBase64 && !selectedHaircut) {
+                Alert.alert('Validation Error', 'Please select an image');
+                return;
+            }
+
+            setUploading(true);
+
             const payload = {
-                ...form,
+                name: form.name.trim(),
+                description: form.description.trim(),
+                image: form.imageBase64 || form.image,
+                category: form.category,
                 tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
             };
 
             if (selectedHaircut) {
+                // Update existing haircut
                 const response = await axios.put(
                     `${API_URL}/admin/haircuts/${selectedHaircut._id}`,
                     payload,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
                         },
                     }
                 );
@@ -157,12 +190,14 @@ const HaircutManagementScreen = ({ navigation }) => {
                     loadHaircuts();
                 }
             } else {
+                // Create new haircut
                 const response = await axios.post(
                     `${API_URL}/admin/haircuts`,
                     payload,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
                         },
                     }
                 );
@@ -179,6 +214,8 @@ const HaircutManagementScreen = ({ navigation }) => {
                 'Error',
                 error.response?.data?.message || 'Failed to save haircut'
             );
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -219,74 +256,75 @@ const HaircutManagementScreen = ({ navigation }) => {
         );
     };
 
-   if (loading && haircuts.length === 0) {
-  return (
-    <LinearGradient
-      colors={['#1A1A4A', '#0A0A1A', '#000000']}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      style={styles.container}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A4A" />
-      <SafeAreaView style={styles.safeArea} />
+    if (loading && haircuts.length === 0) {
+        return (
+            <LinearGradient
+                colors={['#1A1A4A', '#0A0A1A', '#000000']}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.container}
+            >
+                <StatusBar barStyle="light-content" backgroundColor="#1A1A4A" />
+                <SafeAreaView style={styles.safeArea} />
 
-      {/* Header Skeleton */}
-      <View style={styles.header}>
-        <View style={styles.backButton}>
-          <View style={{ width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18 }} />
-        </View>
-        <View style={styles.skeletonHeaderTitle} />
-        <View style={styles.addButton}>
-          <View style={{ width: 40, height: 40, backgroundColor: '#1C1C84', borderRadius: 20 }} />
-        </View>
-      </View>
+                {/* Header Skeleton */}
+                <View style={styles.header}>
+                    <View style={styles.backButton}>
+                        <View style={{ width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 18 }} />
+                    </View>
+                    <View style={styles.skeletonHeaderTitle} />
+                    <View style={styles.addButton}>
+                        <View style={{ width: 40, height: 40, backgroundColor: '#1C1C84', borderRadius: 20 }} />
+                    </View>
+                </View>
 
-      {/* Search & Filter Skeleton */}
-      <View style={styles.searchContainer}>
-        <View style={styles.skeletonInput} />
-        <View style={styles.filterContainer}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <View key={i} style={styles.skeletonFilterButton} />
-          ))}
-        </View>
-      </View>
+                {/* Search & Filter Skeleton */}
+                <View style={styles.searchContainer}>
+                    <View style={styles.skeletonInput} />
+                    <View style={styles.filterContainer}>
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <View key={i} style={styles.skeletonFilterButton} />
+                        ))}
+                    </View>
+                </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Skeleton Haircut Cards */}
-        {[1, 2, 3, 4].map((item) => (
-          <View key={item} style={styles.haircutCard}>
-            <View style={styles.haircutInfo}>
-              {/* Name */}
-              <View style={styles.skeletonLineLong} />
-              {/* Description */}
-              <View style={styles.skeletonLineMedium} />
-              <View style={[styles.skeletonLineMedium, { width: '70%' }]} />
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Skeleton Haircut Cards */}
+                    {[1, 2, 3, 4].map((item) => (
+                        <View key={item} style={styles.haircutCard}>
+                            <View style={styles.haircutInfo}>
+                                {/* Name */}
+                                <View style={styles.skeletonLineLong} />
+                                {/* Description */}
+                                <View style={styles.skeletonLineMedium} />
+                                <View style={[styles.skeletonLineMedium, { width: '70%' }]} />
 
-              {/* Meta: Category + Tags */}
-              <View style={styles.haircutMeta}>
-                <View style={styles.skeletonCategoryBadge} />
-                <View style={styles.skeletonLineShort} />
-              </View>
-            </View>
+                                {/* Meta: Category + Tags */}
+                                <View style={styles.haircutMeta}>
+                                    <View style={styles.skeletonCategoryBadge} />
+                                    <View style={styles.skeletonLineShort} />
+                                </View>
+                            </View>
 
-            <View style={styles.haircutActions}>
-              <View style={styles.skeletonButton} />
-              <View style={styles.skeletonButton} />
-            </View>
-          </View>
-        ))}
+                            <View style={styles.haircutActions}>
+                                <View style={styles.skeletonButton} />
+                                <View style={styles.skeletonButton} />
+                            </View>
+                        </View>
+                    ))}
 
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+                    <View style={styles.bottomSpacing} />
+                </ScrollView>
 
-      <BottomNav activeScreen="haircut" />
-    </LinearGradient>
-  );
-}
+                <BottomNav activeScreen="haircut" />
+            </LinearGradient>
+        );
+    }
+
     return (
         <LinearGradient
             colors={['#1A1A4A', '#0A0A1A', '#000000']}
@@ -373,6 +411,13 @@ const HaircutManagementScreen = ({ navigation }) => {
                 ) : (
                     haircuts.map((haircut) => (
                         <View key={haircut._id} style={styles.haircutCard}>
+                            {haircut.image && (
+                                <Image
+                                    source={{ uri: haircut.image }}
+                                    style={styles.haircutImage}
+                                    resizeMode="cover"
+                                />
+                            )}
                             <View style={styles.haircutInfo}>
                                 <Text style={styles.haircutName}>{haircut.name}</Text>
                                 {haircut.description && (
@@ -493,18 +538,30 @@ const HaircutManagementScreen = ({ navigation }) => {
                             <View style={styles.inputContainer}>
                                 <Text style={styles.label}>Haircut Image *</Text>
                                 {form.image ? (
-                                    <TouchableOpacity onPress={pickImage}>
+                                    <View style={styles.imagePreviewContainer}>
                                         <Image
                                             source={{ uri: form.image }}
-                                            style={{ width: 150, height: 150, borderRadius: 15, marginBottom: 10 }}
+                                            style={styles.imagePreview}
                                         />
-                                    </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.changeImageButton}
+                                            onPress={pickImage}
+                                        >
+                                            <Upload size={16} color="#fff" />
+                                            <Text style={styles.changeImageButtonText}>
+                                                Change Image
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 ) : (
                                     <TouchableOpacity
                                         style={styles.pickImageButton}
                                         onPress={pickImage}
                                     >
-                                        <Text style={styles.pickImageButtonText}>Pick from Gallery</Text>
+                                        <Upload size={24} color="#fff" />
+                                        <Text style={styles.pickImageButtonText}>
+                                            Pick from Gallery
+                                        </Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -565,8 +622,16 @@ const HaircutManagementScreen = ({ navigation }) => {
                                 >
                                     <Text style={styles.cancelButtonText}>Cancel</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                                    <Text style={styles.saveButtonText}>Save</Text>
+                                <TouchableOpacity
+                                    style={[styles.saveButton, uploading && styles.saveButtonDisabled]}
+                                    onPress={handleSave}
+                                    disabled={uploading}
+                                >
+                                    {uploading ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <Text style={styles.saveButtonText}>Save</Text>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -577,7 +642,6 @@ const HaircutManagementScreen = ({ navigation }) => {
     );
 };
 
-// [Keep all the existing styles - they remain the same]
 const styles = StyleSheet.create({
     container: { flex: 1 },
     safeArea: { flex: 0 },
@@ -585,10 +649,8 @@ const styles = StyleSheet.create({
     loadingText: { color: '#fff', marginTop: 10, fontFamily: 'Poppins-Regular' },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 15 },
     backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
-    backIcon: { fontSize: 36, color: '#fff', fontWeight: '300', fontFamily: 'Poppins-Light' },
     headerTitle: { fontSize: 24, color: '#fff', fontFamily: 'Poppins-Bold', flex: 1, textAlign: 'center' },
     addButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1C1C84', borderRadius: 20 },
-    addButtonText: { fontSize: 24, color: '#fff', fontFamily: 'Poppins-Light' },
     searchContainer: { paddingHorizontal: 20, marginBottom: 15 },
     searchInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1.5, borderColor: '#1C1C84', borderRadius: 25, paddingHorizontal: 20, paddingVertical: 12, fontSize: 15, color: '#fff', fontFamily: 'Poppins-Regular', marginBottom: 15 },
     filterContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -601,6 +663,7 @@ const styles = StyleSheet.create({
     emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50 },
     emptyText: { color: '#aaa', fontSize: 16, fontFamily: 'Poppins-Regular' },
     haircutCard: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 20, padding: 20, marginBottom: 15, borderWidth: 1.5, borderColor: '#1C1C84' },
+    haircutImage: { width: '100%', height: 200, borderRadius: 15, marginBottom: 15 },
     haircutInfo: { marginBottom: 15 },
     haircutName: { fontSize: 18, color: '#fff', fontFamily: 'Poppins-SemiBold', marginBottom: 5 },
     haircutDescription: { fontSize: 14, color: '#ddd', fontFamily: 'Poppins-Regular', marginBottom: 10 },
@@ -626,7 +689,11 @@ const styles = StyleSheet.create({
     inputContainer: { marginBottom: 18 },
     label: { fontSize: 14, color: '#fff', marginBottom: 8, fontFamily: 'Poppins-Medium' },
     input: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1.5, borderColor: '#1C1C84', borderRadius: 25, paddingHorizontal: 20, paddingVertical: 16, fontSize: 15, color: '#fff', fontFamily: 'Poppins-Regular' },
-    textArea: { minHeight: 100, textAlignVertical: 'top' },
+    textArea: { minHeight: 100, textAlignVertical: 'top', borderRadius: 20 },
+    imagePreviewContainer: { alignItems: 'center' },
+    imagePreview: { width: 200, height: 200, borderRadius: 20, marginBottom: 15 },
+    changeImageButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1C1C84', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 15 },
+    changeImageButtonText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Medium' },
     categorySelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     categoryOption: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C1C84' },
     categoryOptionActive: { backgroundColor: '#1C1C84' },
@@ -636,66 +703,67 @@ const styles = StyleSheet.create({
     cancelButton: { flex: 1, paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
     cancelButtonText: { color: '#fff', fontSize: 16, fontFamily: 'Poppins-Medium' },
     saveButton: { flex: 1, paddingVertical: 14, borderRadius: 20, backgroundColor: '#1C1C84', alignItems: 'center' },
+    saveButtonDisabled: { opacity: 0.6 },
     saveButtonText: { color: '#fff', fontSize: 16, fontFamily: 'Poppins-Medium' },
-    pickImageButton: { backgroundColor: '#1C1C84', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 15, alignItems: 'center' },
+    pickImageButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#1C1C84', paddingVertical: 16, paddingHorizontal: 20, borderRadius: 15 },
     pickImageButtonText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Medium' },
-      // Skeleton Loader Styles
-  skeletonHeaderTitle: {
-    width: 200,
-    height: 30,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 15,
-  },
-  skeletonInput: {
-    height: 50,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 25,
-    borderWidth: 1.5,
-    borderColor: '#1C1C84',
-    marginBottom: 15,
-  },
-  skeletonFilterButton: {
-    width: 75,
-    height: 36,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#1C1C84',
-  },
-  skeletonLineLong: {
-    height: 22,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 11,
-    width: '85%',
-    marginBottom: 10,
-  },
-  skeletonLineMedium: {
-    height: 18,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 9,
-    width: '70%',
-    marginBottom: 8,
-  },
-  skeletonLineShort: {
-    height: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 8,
-    width: '50%',
-  },
-  skeletonCategoryBadge: {
-    width: 80,
-    height: 28,
-    backgroundColor: '#1C1C84',
-    borderRadius: 14,
-  },
-  skeletonButton: {
-    flex: 1,
-    height: 44,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#1C1C84',
-  },
+    // Skeleton Loader Styles
+    skeletonHeaderTitle: {
+        width: 200,
+        height: 30,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 15,
+    },
+    skeletonInput: {
+        height: 50,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderRadius: 25,
+        borderWidth: 1.5,
+        borderColor: '#1C1C84',
+        marginBottom: 15,
+    },
+    skeletonFilterButton: {
+        width: 75,
+        height: 36,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#1C1C84',
+    },
+    skeletonLineLong: {
+        height: 22,
+        backgroundColor: 'rgba(255,255,255,0.12)',
+        borderRadius: 11,
+        width: '85%',
+        marginBottom: 10,
+    },
+    skeletonLineMedium: {
+        height: 18,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderRadius: 9,
+        width: '70%',
+        marginBottom: 8,
+    },
+    skeletonLineShort: {
+        height: 16,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: 8,
+        width: '50%',
+    },
+    skeletonCategoryBadge: {
+        width: 80,
+        height: 28,
+        backgroundColor: '#1C1C84',
+        borderRadius: 14,
+    },
+    skeletonButton: {
+        flex: 1,
+        height: 44,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#1C1C84',
+    },
 });
 
 export default HaircutManagementScreen;
