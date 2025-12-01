@@ -130,8 +130,12 @@ export default function ProfileScreen() {
 
   const menuItems = [
     { id: 1, Icon: Info, title: 'About', onPress: () => showSnackbar('About - Coming Soon!') },
-    { id: 2, Icon: Settings, title: 'Settings', onPress: () => showSnackbar('Settings - Coming Soon!') },
-    { id: 3, Icon: Tag, title: 'Promotions', onPress: () => showSnackbar('Promotions - Coming Soon!') },
+    {
+      id: 2,
+      Icon: Settings,
+      title: 'Settings',
+      onPress: () => router.push('/settings')   // ← Real navigation!
+    }, { id: 3, Icon: Tag, title: 'Promotions', onPress: () => showSnackbar('Promotions - Coming Soon!') },
     { id: 4, Icon: Bell, title: 'Notifications', onPress: () => router.push('/notifications') },
     { id: 5, Icon: Heart, title: 'Your Favorites', onPress: () => showSnackbar('Favorites - Coming Soon!') },
     { id: 6, Icon: FileText, title: 'Terms & Policies', onPress: () => router.push('/terms-policies') },
@@ -181,121 +185,121 @@ export default function ProfileScreen() {
     >
       <StatusBar barStyle="light-content" backgroundColor="#0a0a2a" />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-      
-      <Snackbar
-        visible={snackbarVisible}
-        message={snackbarMessage}
-        onDismiss={hideSnackbar}
-      />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ChevronLeft color="#fff" size={36} strokeWidth={1.5} />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.editButton}
-          onPress={() => router.push('/edit-profile')}
-        >
-          <Edit color="#fff" size={24} />
-        </TouchableOpacity>
-      </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Profile Section */}
-        <View style={styles.profileSection}>
-          {user?.profileImage ? (
-            <Image
-              source={{ uri: user.profileImage }}
-              style={styles.profileImage}
-            />
-          ) : (
-            <View style={styles.profileImagePlaceholder}>
-              <Text style={styles.profileImageInitials}>{getInitials()}</Text>
-            </View>
-          )}
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{getUserName()}</Text>
-            {user?.phone && (
-              <Text style={styles.profilePhone}>{user.phone}</Text>
-            )}
-            {user?.role && (
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+        <Snackbar
+          visible={snackbarVisible}
+          message={snackbarMessage}
+          onDismiss={hideSnackbar}
+        />
+
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ChevronLeft color="#fff" size={36} strokeWidth={1.5} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push('/edit-profile')}
+          >
+            <Edit color="#fff" size={24} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Profile Section */}
+          <View style={styles.profileSection}>
+            {user?.profileImage ? (
+              <Image
+                source={{ uri: user.profileImage }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Text style={styles.profileImageInitials}>{getInitials()}</Text>
               </View>
             )}
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{getUserName()}</Text>
+              {user?.phone && (
+                <Text style={styles.profilePhone}>{user.phone}</Text>
+              )}
+              {user?.role && (
+                <View style={styles.roleBadge}>
+                  <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* Email Section */}
-        <View style={styles.emailSection}>
-          <Mail color="#fff" size={20} style={styles.emailIcon} />
-          <Text style={styles.emailText}>{user?.email || 'user@example.com'}</Text>
-        </View>
+          {/* Email Section */}
+          <View style={styles.emailSection}>
+            <Mail color="#fff" size={20} style={styles.emailIcon} />
+            <Text style={styles.emailText}>{user?.email || 'user@example.com'}</Text>
+          </View>
 
-        {/* Menu Items */}
-        <View style={styles.menuContainer}>
-          {menuItems.map((item) => {
-            const IconComponent = item.Icon;
-            return (
+          {/* Menu Items */}
+          <View style={styles.menuContainer}>
+            {menuItems.map((item) => {
+              const IconComponent = item.Icon;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.menuItem}
+                  onPress={item.onPress}
+                >
+                  <IconComponent color="#fff" size={24} style={styles.menuIcon} />
+                  <Text style={styles.menuTitle}>{item.title}</Text>
+                </TouchableOpacity>
+              );
+            })}
+            {isAdmin && (
               <TouchableOpacity
-                key={item.id}
                 style={styles.menuItem}
-                onPress={item.onPress}
+                onPress={() => router.push('/admin')}
               >
-                <IconComponent color="#fff" size={24} style={styles.menuIcon} />
-                <Text style={styles.menuTitle}>{item.title}</Text>
+                <Cog color="#FFD700" size={24} style={styles.menuIcon} />
+                <Text style={[styles.menuTitle, styles.adminTitle]}>Admin Panel</Text>
               </TouchableOpacity>
-            );
-          })}
-          {isAdmin && (
+            )}
+          </View>
+
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Account Actions */}
+          <View style={styles.accountActions}>
             <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => router.push('/admin')}
+              style={styles.actionItem}
+              onPress={() => showSnackbar('Switch Account - Coming Soon!')}
             >
-              <Cog color="#FFD700" size={24} style={styles.menuIcon} />
-              <Text style={[styles.menuTitle, styles.adminTitle]}>Admin Panel</Text>
+              <Text style={styles.actionText}>Switch account</Text>
             </TouchableOpacity>
-          )}
-        </View>
+            <TouchableOpacity
+              style={styles.actionItem}
+              onPress={() => showSnackbar('Add Account - Coming Soon!')}
+            >
+              <Text style={styles.actionText}>Add account</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionItem}
+              onPress={handleLogout}
+            >
+              <Text style={styles.actionTextLogout}>Log out</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Divider */}
-        <View style={styles.divider} />
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
 
-        {/* Account Actions */}
-        <View style={styles.accountActions}>
-          <TouchableOpacity 
-            style={styles.actionItem}
-            onPress={() => showSnackbar('Switch Account - Coming Soon!')}
-          >
-            <Text style={styles.actionText}>Switch account</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionItem}
-            onPress={() => showSnackbar('Add Account - Coming Soon!')}
-          >
-            <Text style={styles.actionText}>Add account</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionItem} 
-            onPress={handleLogout}
-          >
-            <Text style={styles.actionTextLogout}>Log out</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-      <BottomNav activeScreen="profile" />
+        {/* Bottom Navigation */}
+        <BottomNav activeScreen="profile" />
       </SafeAreaView>
     </LinearGradient>
   );

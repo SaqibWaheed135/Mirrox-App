@@ -179,6 +179,14 @@ export default function RootLayout() {
             headerBackTitle: 'Back',
           }} 
         />
+
+        <Stack.Screen 
+          name="settings" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>

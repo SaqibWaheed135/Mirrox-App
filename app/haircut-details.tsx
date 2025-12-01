@@ -19,23 +19,75 @@ export default function HaircutDetailsScreen() {
     id: string;
     name: string;
     description: string;
+    imageKey?: string;
   }>();
 
+  // Add this mapping at the top of the file (outside the component)
+const HAIRCUT_IMAGE_MAP: { [key: string]: any } = {
+  // Haircuts (Fades)
+  'low-fade': require('@/assets/images/low-fade.png'),
+  'mid-fade': require('@/assets/images/mid-fade.png'),
+  'high-fade': require('@/assets/images/high-fade.png'),
+  'drop-fade': require('@/assets/images/drop-fade.png'),
+  'taper-fade': require('@/assets/images/taper-fade.png'),
+  'burst-fade': require('@/assets/images/burst-fade.png'),
+
+  // Hairstyles
+  'buzz-cut': require('@/assets/images/buzz-cut.png'),
+  'messy-fringe': require('@/assets/images/messy-fringe.png'),
+  'crop-top': require('@/assets/images/crop-top.png'),
+  'pompadour': require('@/assets/images/pompadaur.png'), // note: you had "pompadaur.png"
+  'modern-mullet': require('@/assets/images/modern-mullet.png'),
+  'edgar-cut': require('@/assets/images/edgar-cut.png'),
+  'middle-part': require('@/assets/images/middle-part.png'),
+  'messy-middle-part': require('@/assets/images/messy-middle-part.png'),
+  'slick-back': require('@/assets/images/slick-back.png'),
+  'messy-slick-back': require('@/assets/images/messy-slick-back.png'),
+  'warrior-cut': require('@/assets/images/warrior-cut.png'),
+  'mod-cut': require('@/assets/images/mod-cut.png'),
+  'wolf-cut': require('@/assets/images/wolf-cut.png'),
+  'waves': require('@/assets/images/waves.png'),
+  'cornrows': require('@/assets/images/cornrows.png'),
+  'twists-braids': require('@/assets/images/twists.png'), // or name it "twists" if preferred
+
+  // Fallback / Saved Looks
+  'my-favorite': require('@/assets/images/haircut.png'),
+  'summer-look': require('@/assets/images/haircut.png'),
+  'office-style': require('@/assets/images/haircut.png'),
+  'weekend-vibe': require('@/assets/images/haircut.png'),
+};  
+
   // Map image based on haircut name or use default
+  // const getImageSource = () => {
+  //   const name = params.name?.toLowerCase() || '';
+  //   if (name.includes('fade')) {
+  //     return require('@/assets/images/low-fade.png');
+  //   } else if (name.includes('taper')) {
+  //     return require('@/assets/images/taper-fade.png');
+  //   } else if (name.includes('crop') || name.includes('crew')) {
+  //     return require('@/assets/images/crop.png');
+  //   } else if (name.includes('buzz')) {
+  //     return require('@/assets/images/buzz.png');
+  //   } else if (name.includes('bun') || name.includes('long')) {
+  //     return require('@/assets/images/long.png');
+  //   }
+  //   return require('@/assets/images/haircut.png');
+  // };
+
   const getImageSource = () => {
-    const name = params.name?.toLowerCase() || '';
-    if (name.includes('fade')) {
-      return require('@/assets/images/fade.png');
-    } else if (name.includes('taper')) {
-      return require('@/assets/images/taper-fade.png');
-    } else if (name.includes('crop') || name.includes('crew')) {
-      return require('@/assets/images/crop.png');
-    } else if (name.includes('buzz')) {
-      return require('@/assets/images/buzz.png');
-    } else if (name.includes('bun') || name.includes('long')) {
-      return require('@/assets/images/long.png');
-    }
-    return require('@/assets/images/haircut.png');
+    const key = params.imageKey || params.name?.toLowerCase().replace(/\s+/g, '-');
+    return HAIRCUT_IMAGE_MAP[key] || require('@/assets/images/haircut.png');
+  };
+
+  // Handle Open in AR button press
+  const handleOpenInAR = () => {
+    router.push({
+      pathname: '/ai-mirror',
+      params: {
+        haircutName: params.name,
+        haircutDescription: params.description,
+      },
+    });
   };
 
   return (
@@ -76,7 +128,7 @@ export default function HaircutDetailsScreen() {
           <Text style={styles.description}>{params.description}</Text>
 
           {/* Open in AR Button */}
-          <TouchableOpacity style={styles.arButton}>
+          <TouchableOpacity style={styles.arButton} onPress={handleOpenInAR}>
             <Text style={styles.arButtonText}>Open in AR</Text>
             <Image
               source={require('@/assets/icons/ar.png')}
@@ -203,4 +255,3 @@ const styles = StyleSheet.create({
     fontFamily: Poppins.Medium,
   },
 });
-

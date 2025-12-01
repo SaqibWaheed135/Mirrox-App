@@ -1,80 +1,75 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  Dimensions,
-  StyleSheet
-} from 'react-native';
+import { Animated, Dimensions, Easing, StyleSheet } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
 export default function SplashScreen() {
-  const appIconScale = useRef(new Animated.Value(0.3)).current;
+  const appIconScale = useRef(new Animated.Value(0.5)).current;
   const appIconOpacity = useRef(new Animated.Value(0)).current;
   const appIconX = useRef(new Animated.Value(0)).current;
-  const mainLogoScale = useRef(new Animated.Value(0.5)).current;
+  const mainLogoScale = useRef(new Animated.Value(0.7)).current;
   const mainLogoOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
-      // 1. Start tiny + fade in
+      // Fade in app icon while scaling
       Animated.parallel([
         Animated.timing(appIconOpacity, {
           toValue: 1,
-          duration: 500,
+          duration: 600,
+          easing: Easing.out(Easing.exp),
           useNativeDriver: true,
         }),
-        Animated.timing(appIconScale, {
-          toValue: 0.1, // Very tiny start
-          duration: 0,
+        Animated.spring(appIconScale, {
+          toValue: 1.3,
+          friction: 5,
+          tension: 80,
           useNativeDriver: true,
         }),
       ]),
-      // 2. Grow BIG (overshoot)
-      Animated.spring(appIconScale, {
-        toValue: 1.4,   // huge size first
-        friction: 5,
-        tension: 80,
-        useNativeDriver: true,
-      }),
-      // 3. Settle to NORMAL size
+      // Settle icon to normal size
       Animated.spring(appIconScale, {
         toValue: 1,
         friction: 7,
-        tension: 40,
+        tension: 50,
         useNativeDriver: true,
       }),
-      // (Optional) Slide left & fade out
+      // Slide left & fade out smoothly
       Animated.parallel([
         Animated.timing(appIconX, {
           toValue: -width * 0.7,
           duration: 700,
+          easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(appIconOpacity, {
           toValue: 0,
           duration: 700,
+          easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
         }),
       ]),
-      // Show main logo
+      // Fade in main logo with smooth scale
       Animated.parallel([
         Animated.timing(mainLogoOpacity, {
           toValue: 1,
           duration: 700,
+          easing: Easing.out(Easing.exp),
           useNativeDriver: true,
         }),
         Animated.spring(mainLogoScale, {
           toValue: 1,
           friction: 6,
+          tension: 40,
           useNativeDriver: true,
         }),
       ]),
     ]).start(() => {
       setTimeout(() => {
         router.replace('/(tabs)');
-      }, 800);
+      }, 500);
     });
   }, []);
 
@@ -85,7 +80,6 @@ export default function SplashScreen() {
       end={{ x: 0.5, y: 1 }}
       style={styles.container}
     >
-      {/* APP ICON FIRST */}
       <Animated.Image
         source={require('@/assets/images/app-icon.png')}
         style={[
@@ -101,7 +95,6 @@ export default function SplashScreen() {
         resizeMode="contain"
       />
 
-      {/* MAIN LOGO AFTER TRANSITION */}
       <Animated.Image
         source={require('@/assets/images/main-logo.png')}
         style={[
@@ -135,4 +128,3 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
-

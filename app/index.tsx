@@ -15,6 +15,7 @@ const { width } = Dimensions.get('window');
 export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
   const appIconScale = useRef(new Animated.Value(0.3)).current;
   const appIconOpacity = useRef(new Animated.Value(0)).current;
@@ -32,6 +33,19 @@ export default function Index() {
       const authenticated = await AuthService.isAuthenticated();
       setIsAuthenticated(authenticated);
 
+      // If authenticated, check if user is admin
+      if (authenticated) {
+        const adminStatus = await AuthService.isAdmin();
+        setIsAdmin(adminStatus);
+        
+        // If admin, logout and redirect to login
+        if (adminStatus) {
+          await AuthService.clearAuth();
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+        }
+      }
+      
       // If not authenticated, check onboarding status
       if (!authenticated) {
         const completedOnboarding = await OnboardingService.hasCompletedOnboarding();
@@ -40,6 +54,7 @@ export default function Index() {
     } catch (error) {
       console.error('Error checking app status:', error);
       setIsAuthenticated(false);
+      setIsAdmin(false);
       setHasCompletedOnboarding(false);
     }
   };
@@ -149,12 +164,12 @@ export default function Index() {
     );
   }
 
-  // Route based on authentication and onboarding status
+  // Route based on authentication, role, and onboarding status
   if (isAuthenticated) {
-    // User is logged in, go to home
+    // User is logged in and not admin, go to home
     return <Redirect href="/(tabs)/home" />;
   } else if (hasCompletedOnboarding) {
-    // User has seen onboarding, go to login
+    // User has seen onboarding or was logged out (admin), go to login
     return <Redirect href="/login" />;
   } else {
     // First time user, show onboarding

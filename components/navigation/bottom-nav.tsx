@@ -1,37 +1,101 @@
-/**
- * Bottom Navigation Component
- * Reusable bottom navigation bar for app screens
- */
-
+import { AuthService } from '@/lib/auth';
 import { router, usePathname } from 'expo-router';
-import { Sparkles } from 'lucide-react-native';
-import React from 'react';
+import { LayoutDashboard, Scissors, Users } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface BottomNavProps {
-  activeScreen?: 'home' | 'camera' | 'profile';
+  activeScreen?: 'home' | 'haircut' | 'users' | 'camera' | 'profile';
 }
 
 export function BottomNav({ activeScreen }: BottomNavProps) {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Determine active screen from pathname if not provided
-  const getActiveScreen = (): 'home' | 'camera' | 'profile' => {
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    const adminStatus = await AuthService.isAdmin();
+    setIsAdmin(adminStatus);
+  };
+
+  // Determine active screen
+  const getActiveScreen = (): 'home' | 'haircut' | 'users' | 'camera' | 'profile' => {
     if (activeScreen) return activeScreen;
+    if (pathname?.includes('/admin')) return 'home';
+    if (pathname?.includes('/haircut-management')) return 'haircut';
+    if (pathname?.includes('/user-management')) return 'users';
     if (pathname?.includes('/home')) return 'home';
+    if (pathname?.includes('/ai-mirror')) return 'camera';
     if (pathname?.includes('/profile')) return 'profile';
-    if (pathname?.includes('/ai-mirror') || pathname?.includes('/camera')) return 'camera';
     return 'home';
   };
 
   const currentActive = getActiveScreen();
 
+  // Navigation handlers
+  const handlePressHome = () => {
+    if (isAdmin) router.push('/admin');
+    else router.push('/(tabs)/home');
+  };
+
+  const handlePressMiddle = () => {
+    if (isAdmin) router.push('/haircut-management');
+    else router.push('/(tabs)/ai-mirror');
+  };
+
+  const handlePressRight = () => {
+    if (isAdmin) router.push('/user-management');
+    else router.push('/(tabs)/profile');
+  };
+
+  if (isAdmin) {
+    // Admin Bottom Navigation with Lucide Icons
+    return (
+      <View style={styles.bottomNav}>
+        {/* Admin Dashboard */}
+        <TouchableOpacity style={styles.navItem} onPress={handlePressHome}>
+          {currentActive === 'home' ? (
+            <View style={styles.navIconActive}>
+              <LayoutDashboard size={24} color="#fff" strokeWidth={2.5} />
+            </View>
+          ) : (
+            <LayoutDashboard size={26} color="#000" strokeWidth={2} opacity={0.3} />
+          )}
+        </TouchableOpacity>
+
+        {/* Haircut Management */}
+        <TouchableOpacity style={styles.navItem} onPress={handlePressMiddle}>
+          {currentActive === 'haircut' ? (
+            <View style={styles.navIconActive}>
+              <Scissors size={28} color="#fff" strokeWidth={2.5} />
+            </View>
+          ) : (
+            <Scissors size={34} color="#000" strokeWidth={2} opacity={0.3} />
+          )}
+        </TouchableOpacity>
+
+        {/* User Management */}
+        <TouchableOpacity style={styles.navItem} onPress={handlePressRight}>
+          {currentActive === 'users' ? (
+            <View style={styles.navIconActive}>
+              <Users size={24} color="#fff" strokeWidth={2.5} />
+            </View>
+          ) : (
+            <Users size={26} color="#000" strokeWidth={2} opacity={0.3} />
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Regular User Bottom Navigation with Image Icons
   return (
     <View style={styles.bottomNav}>
-      <TouchableOpacity
-        style={styles.navItem}
-        onPress={() => router.push('/(tabs)/home')}
-      >
+      {/* Home */}
+      <TouchableOpacity style={styles.navItem} onPress={handlePressHome}>
         {currentActive === 'home' ? (
           <View style={styles.navIconActive}>
             <Image
@@ -49,24 +113,17 @@ export function BottomNav({ activeScreen }: BottomNavProps) {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.navItem}
-        onPress={() => {
-          // Camera screen is hidden, can be enabled later
-          router.push('/(tabs)/ai-mirror');
-        }}
-      >
-        <Sparkles
-          size={28}
-          color="#000"
-          style={{ opacity: currentActive === 'camera' ? 1 : 0.3 }}
+      {/* AI Mirror */}
+      <TouchableOpacity style={styles.navItem} onPress={handlePressMiddle}>
+        <Image
+          source={require('@/assets/icons/ai.png')}
+          style={styles.navIconAICamera}
+          resizeMode="contain"
         />
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.navItem}
-        onPress={() => router.push('/(tabs)/profile')}
-      >
+      {/* Profile */}
+      <TouchableOpacity style={styles.navItem} onPress={handlePressRight}>
         {currentActive === 'profile' ? (
           <View style={styles.navIconActive}>
             <Image
@@ -133,5 +190,10 @@ const styles = StyleSheet.create({
     tintColor: '#000',
     opacity: 0.3,
   },
+  navIconAICamera: {
+    width: 34,
+    height: 34,
+    tintColor: '#000',
+    opacity: 0.3,
+  },
 });
-

@@ -1,9 +1,10 @@
+import { BottomNav } from '@/components/navigation/bottom-nav';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ChevronLeft } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     Modal,
     ScrollView,
@@ -12,7 +13,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -157,20 +158,63 @@ const UserManagementScreen = ({ navigation }) => {
   };
 
   if (loading && users.length === 0) {
-    return (
-      <LinearGradient
-        colors={['#1A1A4A', '#0A0A1A', '#000000']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={styles.container}
-      >
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1C1C84" />
-          <Text style={styles.loadingText}>Loading users...</Text>
+  return (
+    <LinearGradient
+      colors={['#1A1A4A', '#0A0A1A', '#000000']}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={styles.container}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A4A" />
+      <SafeAreaView style={styles.safeArea} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton}>
+          <ChevronLeft size={36} color="#fff" strokeWidth={2.5} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>User Management</Text>
+        <View style={styles.backButton} />
+      </View>
+
+      {/* Search and Filter Skeleton */}
+      <View style={styles.searchContainer}>
+        <View style={styles.skeletonInput} />
+        <View style={styles.filterContainer}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={styles.skeletonFilterButton} />
+          ))}
         </View>
-      </LinearGradient>
-    );
-  }
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Skeleton User Cards */}
+        {[1, 2, 3, 4, 5].map((item) => (
+          <View key={item} style={styles.userCard}>
+            <View style={styles.userInfo}>
+              <View style={styles.skeletonLineLong} />
+              <View style={styles.skeletonLineMedium} />
+              <View style={styles.skeletonLineShort} />
+              <View style={styles.skeletonRoleBadge} />
+            </View>
+            <View style={styles.userActions}>
+              <View style={styles.skeletonButton} />
+              <View style={styles.skeletonButton} />
+            </View>
+          </View>
+        ))}
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      <BottomNav activeScreen="users" />
+    </LinearGradient>
+  );
+}
 
   return (
     <LinearGradient
@@ -188,7 +232,7 @@ const UserManagementScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>‹</Text>
+          <ChevronLeft size={36} color="#fff" strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>User Management</Text>
         <View style={styles.backButton} />
@@ -324,6 +368,9 @@ const UserManagementScreen = ({ navigation }) => {
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
+      {/* Bottom Navigation */}
+      <BottomNav activeScreen="users" />
+
       {/* Edit Modal */}
       <Modal
         visible={editModalVisible}
@@ -414,301 +461,113 @@ const UserManagementScreen = ({ navigation }) => {
   );
 };
 
+// [Keep all existing styles - they remain the same]
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 0,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#fff',
-    marginTop: 10,
-    fontFamily: 'Poppins-Regular',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  backIcon: {
-    fontSize: 36,
-    color: '#fff',
-    fontWeight: '300',
-    fontFamily: 'Poppins-Light',
-  },
-  headerTitle: {
-    fontSize: 24,
-    color: '#fff',
-    fontFamily: 'Poppins-Bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 15,
-  },
-  searchInput: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+  container: { flex: 1 },
+  safeArea: { flex: 0 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: '#fff', marginTop: 10, fontFamily: 'Poppins-Regular' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 15 },
+  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
+  backIcon: { fontSize: 36, color: '#fff', fontWeight: '300', fontFamily: 'Poppins-Light' },
+  headerTitle: { fontSize: 24, color: '#fff', fontFamily: 'Poppins-Bold', flex: 1, textAlign: 'center' },
+  searchContainer: { paddingHorizontal: 20, marginBottom: 15 },
+  searchInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1.5, borderColor: '#1C1C84', borderRadius: 25, paddingHorizontal: 20, paddingVertical: 12, fontSize: 15, color: '#fff', fontFamily: 'Poppins-Regular', marginBottom: 15 },
+  filterContainer: { flexDirection: 'row', gap: 10 },
+  filterButton: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C1C84' },
+  filterButtonActive: { backgroundColor: '#1C1C84' },
+  filterButtonText: { color: '#ccc', fontSize: 12, fontFamily: 'Poppins-Medium' },
+  filterButtonTextActive: { color: '#fff' },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50 },
+  emptyText: { color: '#aaa', fontSize: 16, fontFamily: 'Poppins-Regular' },
+  userCard: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 20, padding: 20, marginBottom: 15, borderWidth: 1.5, borderColor: '#1C1C84' },
+  userInfo: { marginBottom: 15 },
+  userName: { fontSize: 18, color: '#fff', fontFamily: 'Poppins-SemiBold', marginBottom: 5 },
+  userEmail: { fontSize: 14, color: '#ddd', fontFamily: 'Poppins-Regular', marginBottom: 3 },
+  userPhone: { fontSize: 14, color: '#aaa', fontFamily: 'Poppins-Regular', marginBottom: 10 },
+  roleBadge: { alignSelf: 'flex-start', backgroundColor: '#1C1C84', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  roleText: { color: '#fff', fontSize: 12, fontFamily: 'Poppins-Medium', textTransform: 'capitalize' },
+  userActions: { flexDirection: 'row', gap: 10 },
+  editButton: { flex: 1, backgroundColor: '#1C1C84', paddingVertical: 10, borderRadius: 20, alignItems: 'center' },
+  editButtonText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Medium' },
+  deleteButton: { flex: 1, backgroundColor: 'rgba(255, 0, 0, 0.2)', borderWidth: 1, borderColor: '#ff4444', paddingVertical: 10, borderRadius: 20, alignItems: 'center' },
+  deleteButtonText: { color: '#ff4444', fontSize: 14, fontFamily: 'Poppins-Medium' },
+  pagination: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingHorizontal: 10 },
+  paginationButton: { paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#1C1C84', borderRadius: 20 },
+  paginationButtonDisabled: { opacity: 0.5 },
+  paginationButtonText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Medium' },
+  paginationText: { color: '#fff', fontSize: 14, fontFamily: 'Poppins-Regular' },
+  bottomSpacing: { height: 20 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.7)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#1A1A4A', borderRadius: 25, padding: 25, width: '90%', maxWidth: 400, borderWidth: 1.5, borderColor: '#1C1C84' },
+  modalTitle: { fontSize: 24, color: '#fff', fontFamily: 'Poppins-Bold', marginBottom: 20, textAlign: 'center' },
+  inputContainer: { marginBottom: 18 },
+  label: { fontSize: 14, color: '#fff', marginBottom: 8, fontFamily: 'Poppins-Medium' },
+  input: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1.5, borderColor: '#1C1C84', borderRadius: 25, paddingHorizontal: 20, paddingVertical: 16, fontSize: 15, color: '#fff', fontFamily: 'Poppins-Regular' },
+  roleSelector: { flexDirection: 'row', gap: 10 },
+  roleOption: { flex: 1, paddingVertical: 12, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#1C1C84', alignItems: 'center' },
+  roleOptionActive: { backgroundColor: '#1C1C84' },
+  roleOptionText: { color: '#ccc', fontSize: 14, fontFamily: 'Poppins-Medium', textTransform: 'capitalize' },
+  roleOptionTextActive: { color: '#fff' },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  cancelButton: { flex: 1, paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
+  cancelButtonText: { color: '#fff', fontSize: 16, fontFamily: 'Poppins-Medium' },
+  saveButton: { flex: 1, paddingVertical: 14, borderRadius: 20, backgroundColor: '#1C1C84', alignItems: 'center' },
+  saveButtonText: { color: '#fff', fontSize: 16, fontFamily: 'Poppins-Medium' },
+    // Skeleton Loader Styles
+  skeletonInput: {
+    height: 50,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 25,
     borderWidth: 1.5,
     borderColor: '#1C1C84',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#fff',
-    fontFamily: 'Poppins-Regular',
     marginBottom: 15,
   },
-  filterContainer: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  filterButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+  skeletonFilterButton: {
+    width: 80,
+    height: 36,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: '#1C1C84',
   },
-  filterButtonActive: {
-    backgroundColor: '#1C1C84',
-  },
-  filterButtonText: {
-    color: '#ccc',
-    fontSize: 12,
-    fontFamily: 'Poppins-Medium',
-  },
-  filterButtonTextActive: {
-    color: '#fff',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 50,
-  },
-  emptyText: {
-    color: '#aaa',
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-  },
-  userCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 15,
-    borderWidth: 1.5,
-    borderColor: '#1C1C84',
-  },
-  userInfo: {
-    marginBottom: 15,
-  },
-  userName: {
-    fontSize: 18,
-    color: '#fff',
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 5,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#ddd',
-    fontFamily: 'Poppins-Regular',
-    marginBottom: 3,
-  },
-  userPhone: {
-    fontSize: 14,
-    color: '#aaa',
-    fontFamily: 'Poppins-Regular',
+  skeletonLineLong: {
+    height: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
+    width: '80%',
     marginBottom: 10,
   },
-  roleBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#1C1C84',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  roleText: {
-    color: '#fff',
-    fontSize: 12,
-    fontFamily: 'Poppins-Medium',
-    textTransform: 'capitalize',
-  },
-  userActions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  editButton: {
-    flex: 1,
-    backgroundColor: '#1C1C84',
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-  },
-  deleteButton: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 0, 0, 0.2)',
-    borderWidth: 1,
-    borderColor: '#ff4444',
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#ff4444',
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 20,
-    paddingHorizontal: 10,
-  },
-  paginationButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#1C1C84',
-    borderRadius: 20,
-  },
-  paginationButtonDisabled: {
-    opacity: 0.5,
-  },
-  paginationButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-  },
-  paginationText: {
-    color: '#fff',
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-  },
-  bottomSpacing: {
-    height: 20,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#1A1A4A',
-    borderRadius: 25,
-    padding: 25,
-    width: '90%',
-    maxWidth: 400,
-    borderWidth: 1.5,
-    borderColor: '#1C1C84',
-  },
-  modalTitle: {
-    fontSize: 24,
-    color: '#fff',
-    fontFamily: 'Poppins-Bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    marginBottom: 18,
-  },
-  label: {
-    fontSize: 14,
-    color: '#fff',
+  skeletonLineMedium: {
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 8,
+    width: '65%',
     marginBottom: 8,
-    fontFamily: 'Poppins-Medium',
   },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1.5,
-    borderColor: '#1C1C84',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    fontSize: 15,
-    color: '#fff',
-    fontFamily: 'Poppins-Regular',
+  skeletonLineShort: {
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 8,
+    width: '50%',
+    marginBottom: 15,
   },
-  roleSelector: {
-    flexDirection: 'row',
-    gap: 10,
+  skeletonRoleBadge: {
+    width: 70,
+    height: 28,
+    backgroundColor: '#1C1C84',
+    borderRadius: 14,
+    alignSelf: 'flex-start',
   },
-  roleOption: {
+  skeletonButton: {
     flex: 1,
-    paddingVertical: 12,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: '#1C1C84',
-    alignItems: 'center',
-  },
-  roleOptionActive: {
-    backgroundColor: '#1C1C84',
-  },
-  roleOptionText: {
-    color: '#ccc',
-    fontSize: 14,
-    fontFamily: 'Poppins-Medium',
-    textTransform: 'capitalize',
-  },
-  roleOptionTextActive: {
-    color: '#fff',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Poppins-Medium',
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 20,
-    backgroundColor: '#1C1C84',
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Poppins-Medium',
   },
 });
 

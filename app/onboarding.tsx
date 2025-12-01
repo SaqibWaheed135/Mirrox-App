@@ -31,9 +31,9 @@ const onboardingData = [
   },
   {
     id: 3,
-    title: 'Book Your\nPerfect Cut',
-    subtitle: 'Connect with Expert Barbers',
-    description: 'Find and book appointments with top barbers in your area',
+    title: 'Save Your\nPerfect Cut',
+    subtitle: 'Style, Save, Repeat',
+    description: 'Easily save and access your favorite hairstyles anytime',
   },
 ];
 
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     width: '100%',
-    paddingVertical: 18,
+    paddingVertical: 6,
     borderRadius: 30,
     borderWidth: 1.5,
     borderColor: 'rgba(139, 155, 255, 0.3)',
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   paginationContainer: {
     flexDirection: 'row',
     position: 'absolute',
-    bottom: 140,
+    bottom: 80,
     alignSelf: 'center',
   },
   dot: {

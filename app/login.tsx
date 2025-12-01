@@ -1,9 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  Animated,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -16,65 +16,255 @@ import {
 } from 'react-native';
 
 import { Poppins } from '@/constants/theme';
+import { AuthService } from '@/lib/auth';
 import { authService } from '@/services/auth.service';
+
+// Custom Snackbar Component
+const Snackbar = ({ 
+  visible, 
+  message, 
+  type = 'error', 
+  onHide 
+}: { 
+  visible: boolean; 
+  message: string; 
+  type?: 'error' | 'success' | 'info'; 
+  onHide: () => void;
+}) => {
+  const translateY = useRef(new Animated.Value(-100)).current;
+
+  React.useEffect(() => {
+    if (visible) {
+      Animated.sequence([
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 8,
+        }),
+        Animated.delay(3000),
+        Animated.timing(translateY, {
+          toValue: -100,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        onHide();
+      });
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  const backgroundColor = 
+    type === 'error' ? '#FF4444' : 
+    type === 'success' ? '#00C851' : 
+    '#33B5E5';
+
+  return (
+    <Animated.View
+      style={[
+        styles.snackbar,
+        { backgroundColor, transform: [{ translateY }] },
+      ]}
+    >
+      <Text style={styles.snackbarText}>{message}</Text>
+    </Animated.View>
+  );
+};
 
 export default function LoginScreen() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
-  
+
   // Login fields 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // Signup fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'error' as 'error' | 'success' | 'info',
+  });
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const showSnackbar = (message: string, type: 'error' | 'success' | 'info' = 'error') => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  const hideSnackbar = () => {
+    setSnackbar({ ...snackbar, visible: false });
+  };
+
+  const shakeAnimation = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
+
+  // Email validation
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Password strength validation
+  const validatePassword = (password: string): { isValid: boolean; message?: string } => {
+    if (password.length < 8) {
+      return { isValid: false, message: 'Password must be at least 8 characters long' };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return { isValid: false, message: 'Password must contain at least one uppercase letter' };
+    }
+    if (!/[a-z]/.test(password)) {
+      return { isValid: false, message: 'Password must contain at least one lowercase letter' };
+    }
+    if (!/[0-9]/.test(password)) {
+      return { isValid: false, message: 'Password must contain at least one number' };
+    }
+    return { isValid: true };
+  };
+
+  // Name validation
+  const validateName = (name: string): boolean => {
+    return name.trim().length >= 2 && /^[a-zA-Z\s]+$/.test(name);
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please provide email and password.');
+    // Input validation
+    if (!email.trim() || !password) {
+      shakeAnimation();
+      showSnackbar('Please fill in all fields');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      shakeAnimation();
+      showSnackbar('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      shakeAnimation();
+      showSnackbar('Password must be at least 6 characters');
       return;
     }
 
     try {
       setLoading(true);
       await authService.login({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
-      router.replace('/(tabs)/home');
+
+      showSnackbar('Login successful! Redirecting...', 'success');
+
+      // Check user role and route accordingly
+      setTimeout(async () => {
+        const isAdmin = await AuthService.isAdmin();
+        if (isAdmin) {
+          router.replace('/(tabs)/admin');
+        } else {
+          router.replace('/(tabs)/home');
+        }
+      }, 1000);
+
     } catch (err: any) {
       console.error('Login error:', err);
+      shakeAnimation();
 
       let errorMessage = 'Invalid credentials. Please try again.';
 
       if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. Please check your internet connection.';
+        errorMessage = 'Request timed out. Please check your connection.';
       } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
         errorMessage = 'Network error. Please check your internet connection.';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'Invalid email or password';
+      } else if (err.response?.status === 429) {
+        errorMessage = 'Too many attempts. Please try again later.';
       } else if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err.message) {
         errorMessage = err.message;
       }
 
-      Alert.alert('Login Failed', errorMessage);
+      showSnackbar(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSignup = async () => {
-    if (!firstName || !lastName || !signupEmail || !signupPassword) {
-      Alert.alert('Error', 'Please provide first name, last name, email, and password.');
+    // Input validation
+    if (!firstName.trim() || !lastName.trim() || !signupEmail.trim() || !signupPassword || !confirmPassword) {
+      shakeAnimation();
+      showSnackbar('Please fill in all fields');
       return;
     }
 
-    if (signupPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters.');
+    // Name validation
+    if (!validateName(firstName)) {
+      shakeAnimation();
+      showSnackbar('First name must be at least 2 letters and contain only letters');
+      return;
+    }
+
+    if (!validateName(lastName)) {
+      shakeAnimation();
+      showSnackbar('Last name must be at least 2 letters and contain only letters');
+      return;
+    }
+
+    // Email validation
+    if (!validateEmail(signupEmail)) {
+      shakeAnimation();
+      showSnackbar('Please enter a valid email address');
+      return;
+    }
+
+    // Password validation
+    const passwordValidation = validatePassword(signupPassword);
+    if (!passwordValidation.isValid) {
+      shakeAnimation();
+      showSnackbar(passwordValidation.message || 'Invalid password');
+      return;
+    }
+
+    // Confirm password match
+    if (signupPassword !== confirmPassword) {
+      shakeAnimation();
+      showSnackbar('Passwords do not match');
       return;
     }
 
@@ -83,26 +273,43 @@ export default function LoginScreen() {
       await authService.signup({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        email: signupEmail.trim(),
+        email: signupEmail.trim().toLowerCase(),
         password: signupPassword,
       });
-      router.replace('/(tabs)/home');
+
+      showSnackbar('Account created successfully!', 'success');
+
+      // Check user role and route accordingly
+      setTimeout(async () => {
+        const isAdmin = await AuthService.isAdmin();
+        if (isAdmin) {
+          router.replace('/(tabs)/admin');
+        } else {
+          router.replace('/(tabs)/home');
+        }
+      }, 1000);
+
     } catch (err: any) {
       console.error('Signup error:', err);
+      shakeAnimation();
 
       let errorMessage = 'Something went wrong. Please try again.';
 
       if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. Please check your internet connection.';
+        errorMessage = 'Request timed out. Please check your connection.';
       } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
         errorMessage = 'Network error. Please check your internet connection.';
+      } else if (err.response?.status === 409) {
+        errorMessage = 'Email already exists. Please login instead.';
+      } else if (err.response?.status === 400) {
+        errorMessage = 'Invalid input. Please check your details.';
       } else if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err.message) {
         errorMessage = err.message;
       }
 
-      Alert.alert('Signup Failed', errorMessage);
+      showSnackbar(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -113,7 +320,7 @@ export default function LoginScreen() {
   };
 
   const handleGoogleSignIn = () => {
-    Alert.alert('Coming Soon', 'Google Sign-In will be available soon!');
+    showSnackbar('Google Sign-In coming soon!', 'info');
   };
 
   const handleAdminLogin = () => {
@@ -127,6 +334,13 @@ export default function LoginScreen() {
       end={{ x: 0.5, y: 1 }}
       style={styles.container}
     >
+      <Snackbar
+        visible={snackbar.visible}
+        message={snackbar.message}
+        type={snackbar.type}
+        onHide={hideSnackbar}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -137,17 +351,27 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Logo & Tagline */}
-          <View style={styles.logoSection}>
+          <Animated.View 
+            style={[
+              styles.logoSection,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+            ]}
+          >
             <Image
               source={require('@/assets/images/main-logo.png')}
               style={styles.mainLogo}
               resizeMode="contain"
             />
             <Text style={styles.tagline}>REFLECT THE FUTURE OF STYLE</Text>
-          </View>
+          </Animated.View>
 
           {/* Tabs */}
-          <View style={styles.tabContainer}>
+          <Animated.View 
+            style={[
+              styles.tabContainer,
+              { opacity: fadeAnim }
+            ]}
+          >
             <TouchableOpacity
               style={[styles.tab, activeTab === 'login' && styles.activeTab]}
               onPress={() => setActiveTab('login')}
@@ -164,98 +388,121 @@ export default function LoginScreen() {
                 Sign Up
               </Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
 
-          <Text style={styles.title}>
-            {activeTab === 'login' ? 'Welcome Back!' : 'Create Your Account'}
-          </Text>
-
-          {/* === SIGN UP FIELDS === */}
-          {activeTab === 'signup' && (
-            <>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>First Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="John"
-                  placeholderTextColor="#777"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  autoCapitalize="words"
-                />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Last Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Doe"
-                  placeholderTextColor="#777"
-                  value={lastName}
-                  onChangeText={setLastName}
-                  autoCapitalize="words"
-                />
-              </View>
-            </>
-          )}
-
-          {/* === COMMON FIELDS === */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="you@example.com"
-              placeholderTextColor="#777"
-              value={activeTab === 'login' ? email : signupEmail}
-              onChangeText={activeTab === 'login' ? setEmail : setSignupEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#777"
-              value={activeTab === 'login' ? password : signupPassword}
-              onChangeText={activeTab === 'login' ? setPassword : setSignupPassword}
-              secureTextEntry
-            />
-          </View>
-
-          {/* Login Only: Remember Me + Forgot */}
-          {activeTab === 'login' && (
-            <View style={styles.optionsRow}>
-              <TouchableOpacity
-                style={styles.rememberMeContainer}
-                onPress={() => setRememberMe(!rememberMe)}
-              >
-                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                  {rememberMe && <Text style={styles.checkmark}>✓</Text>}
-                </View>
-                <Text style={styles.rememberMeText}>Remember me</Text>
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <Text style={styles.forgotPassword}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={handleSubmit}
-            disabled={loading}
+          <Animated.Text 
+            style={[
+              styles.title,
+              { opacity: fadeAnim }
+            ]}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.loginButtonText}>
-                {activeTab === 'login' ? 'Login' : 'Create Account'}
-              </Text>
+            {activeTab === 'login' ? 'Welcome Back!' : 'Create Your Account'}
+          </Animated.Text>
+
+          <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+            {/* === SIGN UP FIELDS === */}
+            {activeTab === 'signup' && (
+              <>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>First Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="John"
+                    placeholderTextColor="#777"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Last Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Doe"
+                    placeholderTextColor="#777"
+                    value={lastName}
+                    onChangeText={setLastName}
+                    autoCapitalize="words"
+                  />
+                </View>
+              </>
             )}
-          </TouchableOpacity>
+
+            {/* === COMMON FIELDS === */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="you@example.com"
+                placeholderTextColor="#777"
+                value={activeTab === 'login' ? email : signupEmail}
+                onChangeText={activeTab === 'login' ? setEmail : setSignupEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor="#777"
+                value={activeTab === 'login' ? password : signupPassword}
+                onChangeText={activeTab === 'login' ? setPassword : setSignupPassword}
+                secureTextEntry
+              />
+            </View>
+
+            {/* Confirm Password for Signup */}
+            {activeTab === 'signup' && (
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor="#777"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                />
+              </View>
+            )}
+
+            {/* Login Only: Remember Me + Forgot */}
+            {activeTab === 'login' && (
+              <View style={styles.optionsRow}>
+                <TouchableOpacity
+                  style={styles.rememberMeContainer}
+                  onPress={() => setRememberMe(!rememberMe)}
+                >
+                  <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                    {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                  <Text style={styles.rememberMeText}>Remember me</Text>
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.loginButtonText}>
+                  {activeTab === 'login' ? 'Login' : 'Create Account'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
 
           {/* Divider */}
           <View style={styles.dividerContainer}>
@@ -267,13 +514,17 @@ export default function LoginScreen() {
           {/* Google Sign In */}
           <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
             <View style={styles.googleIcon}>
-              <Text style={styles.googleIconText}>G</Text>
+              <Image
+                source={require('@/assets/images/google-logo-icon.png')}
+                style={styles.googleLogo}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </TouchableOpacity>
 
           {/* Admin Login Link */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.adminLinkContainer}
             onPress={handleAdminLogin}
           >
@@ -288,8 +539,8 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1 
+  container: {
+    flex: 1
   },
   scrollContent: {
     flexGrow: 1,
@@ -297,13 +548,13 @@ const styles = StyleSheet.create({
     paddingTop: 70,
     paddingBottom: 50,
   },
-  logoSection: { 
-    alignItems: 'center', 
-    marginBottom: 20 
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 20
   },
-  mainLogo: { 
-    width: 140, 
-    height: 140 
+  mainLogo: {
+    width: 140,
+    height: 140
   },
   tagline: {
     fontSize: 12,
@@ -325,16 +576,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 26,
   },
-  activeTab: { 
-    backgroundColor: '#fff' 
+  activeTab: {
+    backgroundColor: '#fff'
   },
-  tabText: { 
-    fontSize: 16, 
-    color: '#ccc', 
+  tabText: {
+    fontSize: 16,
+    color: '#ccc',
     fontFamily: Poppins.Medium,
   },
-  activeTabText: { 
-    color: '#0A0A2A', 
+  activeTabText: {
+    color: '#0A0A2A',
     fontFamily: Poppins.SemiBold,
   },
   title: {
@@ -344,8 +595,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     fontFamily: Poppins.SemiBold,
   },
-  inputContainer: { 
-    marginBottom: 18 
+  inputContainer: {
+    marginBottom: 18
   },
   label: {
     fontSize: 14,
@@ -370,9 +621,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 25,
   },
-  rememberMeContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   checkbox: {
     width: 20,
@@ -384,20 +635,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxChecked: { 
-    backgroundColor: '#1C1C84' 
+  checkboxChecked: {
+    backgroundColor: '#1C1C84'
   },
-  checkmark: { 
-    color: '#fff', 
-    fontSize: 14, 
-    fontWeight: 'bold' 
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold'
   },
-  rememberMeText: { 
+  rememberMeText: {
     color: '#ddd',
     fontFamily: Poppins.Regular,
   },
-  forgotPassword: { 
-    color: '#8B9BFF', 
+  forgotPassword: {
+    color: '#8B9BFF',
     fontFamily: Poppins.Medium,
   },
   loginButton: {
@@ -412,51 +663,27 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
   },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
   loginButtonText: {
     color: '#fff',
     fontSize: 18,
     fontFamily: Poppins.Bold,
   },
-  dividerContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginVertical: 20 
-  },
-  divider: { 
-    flex: 1, 
-    height: 1, 
-    backgroundColor: 'rgba(255,255,255,0.2)' 
-  },
-  dividerText: { 
-    color: '#999', 
-    marginHorizontal: 15, 
-    fontFamily: Poppins.Medium,
-  },
-  googleButton: {
+  dividerContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingVertical: 16,
-    borderRadius: 30,
-    justifyContent: 'center',
     alignItems: 'center',
+    marginVertical: 20
   },
-  googleIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#4285F4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.2)'
   },
-  googleIconText: { 
-    color: '#fff', 
-    fontSize: 18, 
-    fontFamily: Poppins.Bold,
-  },
-  googleButtonText: { 
-    color: '#333', 
-    fontSize: 16, 
+  dividerText: {
+    color: '#999',
+    marginHorizontal: 15,
     fontFamily: Poppins.Medium,
   },
   adminLinkContainer: {
@@ -469,5 +696,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Poppins.Medium,
     textDecorationLine: 'underline',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginTop: 10,
+    justifyContent: 'center',
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleLogo: {
+    width: 24,
+    height: 24,
+  },
+  googleButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontFamily: Poppins.Medium,
+  },
+  snackbar: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    padding: 16,
+    borderRadius: 12,
+    zIndex: 1000,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  snackbarText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: Poppins.Medium,
+    textAlign: 'center',
   },
 });
