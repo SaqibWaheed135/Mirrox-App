@@ -4,6 +4,7 @@
  */
 
 import { router, usePathname } from 'expo-router';
+import { Sparkles } from 'lucide-react-native';
 import React from 'react';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 
@@ -19,7 +20,7 @@ export function BottomNav({ activeScreen }: BottomNavProps) {
     if (activeScreen) return activeScreen;
     if (pathname?.includes('/home')) return 'home';
     if (pathname?.includes('/profile')) return 'profile';
-    if (pathname?.includes('/index') || pathname?.includes('/camera')) return 'camera';
+    if (pathname?.includes('/ai-mirror') || pathname?.includes('/camera')) return 'camera';
     return 'home';
   };
 
@@ -52,13 +53,13 @@ export function BottomNav({ activeScreen }: BottomNavProps) {
         style={styles.navItem}
         onPress={() => {
           // Camera screen is hidden, can be enabled later
-          // router.push('/(tabs)/index');
+          router.push('/(tabs)/ai-mirror');
         }}
       >
-        <Image
-          source={require('@/assets/icons/ai.png')}
-          style={styles.navIconImageInactive}
-          resizeMode="contain"
+        <Sparkles
+          size={28}
+          color="#000"
+          style={{ opacity: currentActive === 'camera' ? 1 : 0.3 }}
         />
       </TouchableOpacity>
 

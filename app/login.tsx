@@ -34,44 +34,42 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    // if (!email || !password) {
-    //   Alert.alert('Error', 'Please enter email and password.');
-    //   return;
-    // }
+    if (!email || !password) {
+      Alert.alert('Error', 'Please provide email and password.');
+      return;
+    }
 
-    router.replace('/(tabs)');
+    try {
+      setLoading(true);
+      await authService.login({
+        email: email.trim(),
+        password,
+      });
+      router.replace('/(tabs)/home');
+    } catch (err: any) {
+      console.error('Login error:', err);
 
-    // try {
-    //   setLoading(true);
-    //   await authService.login({
-    //     email: email.trim(),
-    //     password,
-    //   });
-    //   router.replace('/(tabs)/home');
-    // } catch (err: any) {
-    //   console.error('Login error:', err);
-      
-    //   let errorMessage = 'Invalid credentials. Please try again.';
-      
-    //   if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-    //     errorMessage = 'Request timed out. Please check your internet connection and try again.';
-    //   } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-    //     errorMessage = 'Network error. Please check your internet connection.';
-    //   } else if (err.response?.data?.message) {
-    //     errorMessage = err.response.data.message;
-    //   } else if (err.message) {
-    //     errorMessage = err.message;
-    //   }
-      
-    //   Alert.alert('Login Failed', errorMessage);
-    // } finally {
-    //   setLoading(false);
-    // }
+      let errorMessage = 'Invalid credentials. Please try again.';
+
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        errorMessage = 'Request timed out. Please check your internet connection.';
+      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignup = async () => {
     if (!firstName || !lastName || !signupEmail || !signupPassword) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      Alert.alert('Error', 'Please provide first name, last name, email, and password.');
       return;
     }
 
@@ -91,11 +89,11 @@ export default function LoginScreen() {
       router.replace('/(tabs)/home');
     } catch (err: any) {
       console.error('Signup error:', err);
-      
+
       let errorMessage = 'Something went wrong. Please try again.';
-      
+
       if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. Please check your internet connection and try again.';
+        errorMessage = 'Request timed out. Please check your internet connection.';
       } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
         errorMessage = 'Network error. Please check your internet connection.';
       } else if (err.response?.data?.message) {
@@ -103,7 +101,7 @@ export default function LoginScreen() {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       Alert.alert('Signup Failed', errorMessage);
     } finally {
       setLoading(false);
@@ -116,6 +114,10 @@ export default function LoginScreen() {
 
   const handleGoogleSignIn = () => {
     Alert.alert('Coming Soon', 'Google Sign-In will be available soon!');
+  };
+
+  const handleAdminLogin = () => {
+    router.push('/admin-login');
   };
 
   return (
@@ -268,6 +270,16 @@ export default function LoginScreen() {
               <Text style={styles.googleIconText}>G</Text>
             </View>
             <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          {/* Admin Login Link */}
+          <TouchableOpacity 
+            style={styles.adminLinkContainer}
+            onPress={handleAdminLogin}
+          >
+            <Text style={styles.adminLinkText}>
+              🔐 Admin Access
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -447,5 +459,15 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontFamily: Poppins.Medium,
   },
+  adminLinkContainer: {
+    marginTop: 30,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  adminLinkText: {
+    color: '#8B9BFF',
+    fontSize: 14,
+    fontFamily: Poppins.Medium,
+    textDecorationLine: 'underline',
+  },
 });
-

@@ -3,10 +3,9 @@
  * Handles all authentication-related API calls
  */
 
-import { router } from 'expo-router';
-
 import { getApiUrl } from '@/config/api';
 import { AuthService as AuthStorage } from '@/lib/auth';
+import { router } from 'expo-router';
 import { apiService } from './api.service';
 
 export interface LoginCredentials {
@@ -25,10 +24,9 @@ export interface AuthResponse {
   token: string;
   user: {
     id: string;
-    email: string;
     firstName?: string;
     lastName?: string;
-    name?: string;
+    email: string;
     phone?: string;
     role?: string;
     [key: string]: any;
@@ -47,7 +45,7 @@ class AuthApiService {
 
   async signup(data: SignupData): Promise<AuthResponse> {
     const response = await apiService.post<AuthResponse>(
-      getApiUrl('/api/auth/signup'),
+      getApiUrl('/api/auth/register'), // backend endpoint
       {
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
@@ -72,4 +70,3 @@ class AuthApiService {
 }
 
 export const authService = new AuthApiService();
-

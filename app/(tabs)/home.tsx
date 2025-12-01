@@ -2,14 +2,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -200,105 +200,109 @@ export default function HomeScreen() {
       style={styles.container}
     >
       <StatusBar barStyle="light-content" backgroundColor="#1A1A4A" />
-      <SafeAreaView edges={['top']} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
 
-      {/* Fixed Header Section */}
-      <View style={styles.fixedHeader}>
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Hi Nour!</Text>
-          <Text style={styles.welcomeSubtitle}>Find The Perfect Cut</Text>
-        </View>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputWrapper}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Your Haircut"
-              placeholderTextColor="#878787"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+        {/* Fixed Header Section */}
+        <View style={styles.fixedHeader}>
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeTitle}>Hi Nour!</Text>
+            <Text style={styles.welcomeSubtitle}>Find The Perfect Cut</Text>
           </View>
-          <TouchableOpacity style={styles.searchButton}>
-            <Text style={styles.searchButtonText}>Search</Text>
-          </TouchableOpacity>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputWrapper}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search Your Haircut"
+                placeholderTextColor="#878787"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+            <TouchableOpacity style={styles.searchButton}>
+              <Text style={styles.searchButtonText}>Search</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tab Navigation with Horizontal Scroll */}
+          <ScrollView
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabScrollContent}
+          >
+            <View style={styles.tabContainer}>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'HairCuts' && styles.activeTab]}
+                onPress={() => setActiveTab('HairCuts')}
+              >
+                <Text style={[styles.tabText, activeTab === 'HairCuts' && styles.activeTabText]}>
+                  HairCuts
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'HairStyles' && styles.activeTab]}
+                onPress={() => setActiveTab('HairStyles')}
+              >
+                <Text style={[styles.tabText, activeTab === 'HairStyles' && styles.activeTabText]}>
+                  HairStyles
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'Saved Looks' && styles.activeTab]}
+                onPress={() => setActiveTab('Saved Looks')}
+              >
+                <Text style={[styles.tabText, activeTab === 'Saved Looks' && styles.activeTabText]}>
+                  Saved Looks
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
 
-        {/* Tab Navigation with Horizontal Scroll */}
+        {/* Scrollable Grid Section */}
         <ScrollView
-          horizontal={true}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScrollContent}
+          style={styles.gridScrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'HairCuts' && styles.activeTab]}
-              onPress={() => setActiveTab('HairCuts')}
-            >
-              <Text style={[styles.tabText, activeTab === 'HairCuts' && styles.activeTabText]}>
-                HairCuts
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'HairStyles' && styles.activeTab]}
-              onPress={() => setActiveTab('HairStyles')}
-            >
-              <Text style={[styles.tabText, activeTab === 'HairStyles' && styles.activeTabText]}>
-                HairStyles
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'Saved Looks' && styles.activeTab]}
-              onPress={() => setActiveTab('Saved Looks')}
-            >
-              <Text style={[styles.tabText, activeTab === 'Saved Looks' && styles.activeTabText]}>
-                Saved Looks
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.haircutsGrid}>
+            {filteredData.map((haircut) => (
+              <TouchableOpacity
+                key={haircut.id}
+                style={styles.haircutCard}
+                onPress={() => handleHaircutPress(haircut)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.haircutImageContainer}>
+                  <Image
+                    source={haircut.image}
+                    style={styles.haircutImage}
+                    resizeMode="cover"
+                  />
+                </View>
+                <View style={styles.haircutLabelContainer}>
+                  <Text style={styles.haircutLabel}>{haircut.name}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         </ScrollView>
-      </View>
 
-      {/* Scrollable Grid Section */}
-      <ScrollView
-        style={styles.gridScrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.haircutsGrid}>
-          {filteredData.map((haircut) => (
-            <TouchableOpacity
-              key={haircut.id}
-              style={styles.haircutCard}
-              onPress={() => handleHaircutPress(haircut)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.haircutImageContainer}>
-                <Image
-                  source={haircut.image}
-                  style={styles.haircutImage}
-                  resizeMode="cover"
-                />
-              </View>
-              <View style={styles.haircutLabelContainer}>
-                <Text style={styles.haircutLabel}>{haircut.name}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-      <BottomNav activeScreen="home" />
+        {/* Bottom Navigation */}
+        <BottomNav activeScreen="home" />
+      </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
   fixedHeader: {
@@ -447,4 +451,3 @@ const styles = StyleSheet.create({
     lineHeight: 13,
   },
 });
-

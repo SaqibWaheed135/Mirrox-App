@@ -89,6 +89,14 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
+          name="onboarding" 
+          options={{ 
+            headerShown: false,
+            animation: 'fade',
+            gestureEnabled: false,
+          }} 
+        />
+        <Stack.Screen 
           name="login" 
           options={{ 
             headerShown: false,
@@ -116,8 +124,48 @@ export default function RootLayout() {
             presentation: 'card',
           }} 
         />
+
+         <Stack.Screen 
+          name="edit-profile" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
+
+         <Stack.Screen 
+          name="terms-policies" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
+
+         <Stack.Screen 
+          name="admin-login" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
         <Stack.Screen 
           name="admin" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
+
+        <Stack.Screen 
+          name="user-management" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
+
+        <Stack.Screen 
+          name="haircut-management" 
           options={{ 
             headerShown: false,
             presentation: 'card',

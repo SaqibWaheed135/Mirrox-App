@@ -1,7 +1,21 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
 import {
+  Bell,
+  ChevronLeft,
+  Cog,
+  Edit,
+  FileText,
+  Heart,
+  Info,
+  Mail,
+  Settings,
+  Sparkles,
+  Tag
+} from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Animated,
   Image,
   ScrollView,
   StatusBar,
@@ -14,22 +28,83 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomNav } from '@/components/navigation/bottom-nav';
 import { Poppins } from '@/constants/theme';
-import { AuthService, User } from '@/lib/auth';
+import { AuthService } from '@/lib/auth';
+
+interface User {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email: string;
+  phone?: string;
+  role?: string;
+  profileImage?: string | null;
+}
+
+const Snackbar = ({ visible, message, onDismiss }) => {
+  const [slideAnim] = useState(new Animated.Value(-100));
+
+  useEffect(() => {
+    if (visible) {
+      Animated.sequence([
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 8,
+        }),
+        Animated.delay(2000),
+        Animated.timing(slideAnim, {
+          toValue: -100,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        onDismiss();
+      });
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.snackbar,
+        {
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <Text style={styles.snackbarText}>{message}</Text>
+    </Animated.View>
+  );
+};
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  // Load user data on initial mount
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // Reload user data whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+    }, [])
+  );
 
   const loadUserData = async () => {
     try {
       const userData = await AuthService.getUser();
       if (userData) {
-        setUser(userData);
-        setIsAdmin((userData as any).role === 'admin');
+        setUser(userData as User);
+        setIsAdmin(userData.role === 'admin');
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -37,66 +112,64 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
+    showSnackbar('Logging out...');
     await AuthService.clearAuth();
-    router.replace('/login');
+    setTimeout(() => {
+      router.replace('/login');
+    }, 500);
+  };
+
+  const showSnackbar = (message: string) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  };
+
+  const hideSnackbar = () => {
+    setSnackbarVisible(false);
   };
 
   const menuItems = [
-    { 
-      id: 1, 
-      icon: require('@/assets/icons/info.png'), 
-      title: 'About', 
-      onPress: () => console.log('About') 
-    },
-    { 
-      id: 2, 
-      icon: require('@/assets/icons/settings.png'), 
-      title: 'Settings', 
-      onPress: () => console.log('Settings') 
-    },
-    { 
-      id: 3, 
-      icon: require('@/assets/icons/promotions.png'), 
-      title: 'Promotions', 
-      onPress: () => console.log('Promotions') 
-    },
-    { 
-      id: 4, 
-      icon: require('@/assets/icons/notifications.png'), 
-      title: 'Notifications', 
-      onPress: () => console.log('Notifications') 
-    },
-    { 
-      id: 5, 
-      icon: require('@/assets/icons/heart.png'), 
-      title: 'Your Favorites', 
-      onPress: () => console.log('Favorites') 
-    },
-    { 
-      id: 6, 
-      icon: require('@/assets/icons/document.png'), 
-      title: 'Terms & Policies', 
-      onPress: () => console.log('Terms') 
-    },
-    { 
-      id: 7, 
-      icon: require('@/assets/icons/meta.png'), 
-      title: 'Meta AI', 
-      onPress: () => console.log('Meta AI') 
-    },
+    { id: 1, Icon: Info, title: 'About', onPress: () => showSnackbar('About - Coming Soon!') },
+    { id: 2, Icon: Settings, title: 'Settings', onPress: () => showSnackbar('Settings - Coming Soon!') },
+    { id: 3, Icon: Tag, title: 'Promotions', onPress: () => showSnackbar('Promotions - Coming Soon!') },
+    { id: 4, Icon: Bell, title: 'Notifications', onPress: () => router.push('/notifications') },
+    { id: 5, Icon: Heart, title: 'Your Favorites', onPress: () => showSnackbar('Favorites - Coming Soon!') },
+    { id: 6, Icon: FileText, title: 'Terms & Policies', onPress: () => router.push('/terms-policies') },
+    { id: 7, Icon: Sparkles, title: 'Meta AI', onPress: () => showSnackbar('Meta AI - Coming Soon!') },
   ];
 
   const getUserName = () => {
+    // Prioritize firstName + lastName
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
     }
+    // Fall back to firstName only
     if (user?.firstName) {
       return user.firstName;
     }
-    if ((user as any)?.name) {
-      return (user as any).name;
+    // Fall back to name field
+    if (user?.name) {
+      return user.name;
     }
+    // Default
     return 'User';
+  };
+
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user?.firstName) {
+      return user.firstName[0].toUpperCase();
+    }
+    if (user?.name) {
+      const parts = user.name.split(' ');
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      return user.name[0].toUpperCase();
+    }
+    return 'U';
   };
 
   return (
@@ -107,17 +180,27 @@ export default function ProfileScreen() {
       style={styles.container}
     >
       <StatusBar barStyle="light-content" backgroundColor="#0a0a2a" />
-      <SafeAreaView />
-
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      
+      <Snackbar
+        visible={snackbarVisible}
+        message={snackbarMessage}
+        onDismiss={hideSnackbar}
+      />
+      
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerSpacer} />
-        <TouchableOpacity style={styles.editButton}>
-          <Image
-            source={require('@/assets/icons/edit.png')}
-            style={styles.editIconImage}
-            resizeMode="contain"
-          />
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ChevronLeft color="#fff" size={36} strokeWidth={1.5} />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.editButton}
+          onPress={() => router.push('/edit-profile')}
+        >
+          <Edit color="#fff" size={24} />
         </TouchableOpacity>
       </View>
 
@@ -128,50 +211,56 @@ export default function ProfileScreen() {
       >
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <Image
-            source={require('@/assets/images/profile.png')}
-            style={styles.profileImage}
-          />
+          {user?.profileImage ? (
+            <Image
+              source={{ uri: user.profileImage }}
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.profileImagePlaceholder}>
+              <Text style={styles.profileImageInitials}>{getInitials()}</Text>
+            </View>
+          )}
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{getUserName()}</Text>
-            {(user as any)?.phone && (
-              <Text style={styles.profilePhone}>{(user as any).phone}</Text>
+            {user?.phone && (
+              <Text style={styles.profilePhone}>{user.phone}</Text>
+            )}
+            {user?.role && (
+              <View style={styles.roleBadge}>
+                <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+              </View>
             )}
           </View>
         </View>
 
         {/* Email Section */}
         <View style={styles.emailSection}>
-          <Image
-            source={require('@/assets/icons/email.png')}
-            style={styles.emailIcon}
-            resizeMode="contain"
-          />
+          <Mail color="#fff" size={20} style={styles.emailIcon} />
           <Text style={styles.emailText}>{user?.email || 'user@example.com'}</Text>
         </View>
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
-          {menuItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.menuItem}
-              onPress={item.onPress}
-            >
-              <Image
-                source={item.icon}
-                style={styles.menuIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.menuTitle}>{item.title}</Text>
-            </TouchableOpacity>
-          ))}
+          {menuItems.map((item) => {
+            const IconComponent = item.Icon;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.menuItem}
+                onPress={item.onPress}
+              >
+                <IconComponent color="#fff" size={24} style={styles.menuIcon} />
+                <Text style={styles.menuTitle}>{item.title}</Text>
+              </TouchableOpacity>
+            );
+          })}
           {isAdmin && (
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => router.push('/admin')}
             >
-              <Text style={styles.adminIcon}>⚙️</Text>
+              <Cog color="#FFD700" size={24} style={styles.menuIcon} />
               <Text style={[styles.menuTitle, styles.adminTitle]}>Admin Panel</Text>
             </TouchableOpacity>
           )}
@@ -182,13 +271,22 @@ export default function ProfileScreen() {
 
         {/* Account Actions */}
         <View style={styles.accountActions}>
-          <TouchableOpacity style={styles.actionItem}>
-            <Text style={styles.actionText}>Login</Text>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={() => showSnackbar('Switch Account - Coming Soon!')}
+          >
+            <Text style={styles.actionText}>Switch account</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={() => showSnackbar('Add Account - Coming Soon!')}
+          >
             <Text style={styles.actionText}>Add account</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionItem} onPress={handleLogout}>
+          <TouchableOpacity 
+            style={styles.actionItem} 
+            onPress={handleLogout}
+          >
             <Text style={styles.actionTextLogout}>Log out</Text>
           </TouchableOpacity>
         </View>
@@ -198,12 +296,16 @@ export default function ProfileScreen() {
 
       {/* Bottom Navigation */}
       <BottomNav activeScreen="profile" />
+      </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
   header: {
@@ -214,20 +316,17 @@ const styles = StyleSheet.create({
     paddingTop: 5,
     paddingBottom: 10,
   },
-  headerSpacer: {
+  backButton: {
     width: 40,
     height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   editButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'flex-end',
-  },
-  editIconImage: {
-    width: 24,
-    height: 24,
-    tintColor: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -248,6 +347,19 @@ const styles = StyleSheet.create({
     borderRadius: 45,
     backgroundColor: '#fff',
   },
+  profileImagePlaceholder: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#1C1C84',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileImageInitials: {
+    fontSize: 32,
+    fontFamily: Poppins.Bold,
+    color: '#fff',
+  },
   profileInfo: {
     marginLeft: 20,
     flex: 1,
@@ -262,6 +374,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#D9D9D9',
     fontFamily: Poppins.Regular,
+    marginBottom: 6,
+  },
+  roleBadge: {
+    backgroundColor: 'rgba(28, 28, 132, 0.3)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1C1C84',
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  roleText: {
+    fontSize: 11,
+    fontFamily: Poppins.SemiBold,
+    color: '#8B9BFF',
+    letterSpacing: 0.5,
   },
   emailSection: {
     flexDirection: 'row',
@@ -270,10 +399,7 @@ const styles = StyleSheet.create({
     marginBottom: 35,
   },
   emailIcon: {
-    width: 20,
-    height: 20,
     marginRight: 12,
-    tintColor: '#fff',
   },
   emailText: {
     fontSize: 14,
@@ -290,13 +416,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   menuIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 18,
-    tintColor: '#fff',
-  },
-  adminIcon: {
-    fontSize: 24,
     marginRight: 18,
   },
   menuTitle: {
@@ -305,7 +424,7 @@ const styles = StyleSheet.create({
     fontFamily: Poppins.Regular,
   },
   adminTitle: {
-    color: '#1C1C84',
+    color: '#FFD700',
     fontFamily: Poppins.SemiBold,
   },
   divider: {
@@ -328,12 +447,31 @@ const styles = StyleSheet.create({
   },
   actionTextLogout: {
     fontSize: 15,
-    color: '#0084FF',
-    fontFamily: Poppins.Regular,
+    color: '#FF4444',
+    fontFamily: Poppins.SemiBold,
   },
   bottomSpacing: {
     height: 100,
   },
+  snackbar: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    backgroundColor: '#323232',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 8,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  snackbarText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: Poppins.Regular,
+    textAlign: 'center',
+  },
 });
-
-

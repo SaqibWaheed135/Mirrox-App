@@ -51,7 +51,7 @@ export default function AdminScreen() {
       }
 
       const response = await apiService.get<{ success: boolean; stats: AdminStats }>('/api/admin/stats');
-      
+
       if (response.success) {
         setStats(response.stats);
       } else {
@@ -59,7 +59,7 @@ export default function AdminScreen() {
       }
     } catch (error: any) {
       console.error('Error loading stats:', error);
-      
+
       if (error.response?.status === 401 || error.response?.status === 403) {
         Alert.alert('Access Denied', 'You do not have admin privileges');
         router.back();
@@ -184,8 +184,9 @@ export default function AdminScreen() {
           <TouchableOpacity
             style={styles.managementCard}
             onPress={() => {
+              router.push('/user-management'); // Instead of Alert
+
               // Navigate to user management (to be implemented)
-              Alert.alert('Coming Soon', 'User Management will be available soon!');
             }}
           >
             <View style={styles.managementCardContent}>
@@ -204,7 +205,7 @@ export default function AdminScreen() {
             style={styles.managementCard}
             onPress={() => {
               // Navigate to haircut management (to be implemented)
-              Alert.alert('Coming Soon', 'Haircut Management will be available soon!');
+              router.push('/haircut-management'); // Instead of Alert
             }}
           >
             <View style={styles.managementCardContent}>
@@ -251,7 +252,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
     paddingBottom: 15,
   },
   backButton: {

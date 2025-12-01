@@ -8,12 +8,14 @@ import {
 } from 'react-native';
 
 import { AuthService } from '@/lib/auth';
+import { OnboardingService } from '@/services/onboarding.service';
 
 const { width } = Dimensions.get('window');
 
 export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
   const appIconScale = useRef(new Animated.Value(0.3)).current;
   const appIconOpacity = useRef(new Animated.Value(0)).current;
   const appIconX = useRef(new Animated.Value(0)).current;
@@ -21,11 +23,26 @@ export default function Index() {
   const mainLogoOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Check authentication status
-    AuthService.isAuthenticated().then((authenticated) => {
-      setIsAuthenticated(authenticated);
-    });
+    checkAppStatus();
   }, []);
+
+  const checkAppStatus = async () => {
+    try {
+      // Check authentication status
+      const authenticated = await AuthService.isAuthenticated();
+      setIsAuthenticated(authenticated);
+
+      // If not authenticated, check onboarding status
+      if (!authenticated) {
+        const completedOnboarding = await OnboardingService.hasCompletedOnboarding();
+        setHasCompletedOnboarding(completedOnboarding);
+      }
+    } catch (error) {
+      console.error('Error checking app status:', error);
+      setIsAuthenticated(false);
+      setHasCompletedOnboarding(false);
+    }
+  };
 
   useEffect(() => {
     if (!showSplash) return;
@@ -91,51 +108,58 @@ export default function Index() {
     });
   }, [showSplash]);
 
-  if (!showSplash) {
-    // If authenticated, go to home screen; otherwise go to login
-    if (isAuthenticated) {
-      return <Redirect href="/(tabs)/home" />;
-    }
-    return <Redirect href="/login" />;
+  // Wait for animation and status checks
+  if (showSplash || isAuthenticated === null) {
+    return (
+      <LinearGradient
+        colors={['#1A1A4A', '#0A0A1A', '#000000']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.container}
+      >
+        {/* APP ICON FIRST */}
+        <Animated.Image
+          source={require('@/assets/images/app-icon.png')}
+          style={[
+            styles.icon,
+            {
+              opacity: appIconOpacity,
+              transform: [
+                { scale: appIconScale },
+                { translateX: appIconX },
+              ],
+            },
+          ]}
+          resizeMode="contain"
+        />
+
+        {/* MAIN LOGO AFTER TRANSITION */}
+        <Animated.Image
+          source={require('@/assets/images/main-logo.png')}
+          style={[
+            styles.mainLogo,
+            {
+              opacity: mainLogoOpacity,
+              transform: [{ scale: mainLogoScale }],
+            },
+          ]}
+          resizeMode="contain"
+        />
+      </LinearGradient>
+    );
   }
 
-  return (
-    <LinearGradient
-      colors={['#1A1A4A', '#0A0A1A', '#000000']}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      style={styles.container}
-    >
-      {/* APP ICON FIRST */}
-      <Animated.Image
-        source={require('@/assets/images/icon.png')}
-        style={[
-          styles.icon,
-          {
-            opacity: appIconOpacity,
-            transform: [
-              { scale: appIconScale },
-              { translateX: appIconX },
-            ],
-          },
-        ]}
-        resizeMode="contain"
-      />
-
-      {/* MAIN LOGO AFTER TRANSITION */}
-      <Animated.Image
-        source={require('@/assets/images/splash-icon.png')}
-        style={[
-          styles.mainLogo,
-          {
-            opacity: mainLogoOpacity,
-            transform: [{ scale: mainLogoScale }],
-          },
-        ]}
-        resizeMode="contain"
-      />
-    </LinearGradient>
-  );
+  // Route based on authentication and onboarding status
+  if (isAuthenticated) {
+    // User is logged in, go to home
+    return <Redirect href="/(tabs)/home" />;
+  } else if (hasCompletedOnboarding) {
+    // User has seen onboarding, go to login
+    return <Redirect href="/login" />;
+  } else {
+    // First time user, show onboarding
+    return <Redirect href="/onboarding" />;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -156,4 +180,3 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
-

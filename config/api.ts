@@ -4,11 +4,11 @@
  */
 
 export const API_CONFIG = {
-  BASE_URL: 'http://192.168.1.17:5000',
+  BASE_URL: 'https://mirrox-dev.vercel.app',
   ENDPOINTS: {
     AUTH: {
       LOGIN: '/api/auth/login',
-      SIGNUP: '/api/auth/signup',
+      SIGNUP: '/api/auth/register',
       LOGOUT: '/api/auth/logout',
       REFRESH: '/api/auth/refresh',
     },
